@@ -1,0 +1,1313 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Watchlist</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jost:wght@200;300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0a; --surface: #121212; --border: #1f1f1f; --border-light: #2a2a2a;
+    --text: #e8e6e1; --text-dim: #c8c6c2; --text-muted: #9a9896;
+    --accent: #c8b88a; --primary: #e07840; --green: #6b9b7f; --red: #b86b6b;
+    --alert: #e07840;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--bg); color: var(--text); font-family: 'Jost', -apple-system, sans-serif; font-weight: 300; letter-spacing: 0.01em; -webkit-font-smoothing: antialiased; min-height: 100vh; }
+  body { padding: 60px 40px; max-width: 1800px; margin: 0 auto; }
+  header { display: flex; justify-content: space-between; align-items: flex-end; padding-bottom: 40px; border-bottom: 1px solid var(--border); margin-bottom: 60px; }
+  .title-block h1 { font-family: 'Jost', sans-serif; font-weight: 200; font-size: 42px; letter-spacing: 0.15em; text-transform: uppercase; line-height: 1; margin-bottom: 10px; }
+  .title-block .subtitle { font-family: 'Jost', sans-serif; font-size: 13px; color: var(--text-muted); letter-spacing: 0.2em; text-transform: uppercase; }
+  .header-actions { display: flex; gap: 12px; }
+  button { background: transparent; color: var(--text-dim); border: 1px solid var(--border-light); padding: 10px 20px; font-family: 'Jost', sans-serif; font-size: 13px; letter-spacing: 0.15em; text-transform: uppercase; cursor: pointer; transition: all 0.3s ease; }
+  button:hover { color: var(--text); border-color: var(--accent); }
+  button.primary { background: var(--primary); color: var(--bg); border-color: var(--primary); }
+  button.primary:hover { background: transparent; color: var(--primary); }
+  button.danger:hover { color: var(--red); border-color: var(--red); }
+
+  /* Stats */
+  .stats { display: grid; grid-template-columns: 1fr 1fr 1fr; margin-bottom: 60px; border: 1px solid var(--border); }
+  .stat { padding: 32px 28px; border-right: 1px solid var(--border); }
+  .stat:last-child { border-right: none; }
+  .stat-label { font-family: 'Jost', sans-serif; font-size: 13px; color: var(--text-muted); letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 12px; }
+  .stat-value { font-family: 'Jost', sans-serif; font-size: 30px; font-weight: 300; letter-spacing: 0.02em; line-height: 1; }
+  .stat-value.alert { color: var(--alert); }
+  .stat-value.watching { color: var(--accent); }
+  .stat-sub { font-family: 'Jost', sans-serif; font-size: 14px; color: var(--text-muted); margin-top: 8px; letter-spacing: 0.04em; }
+
+  /* Form */
+  .section { margin-bottom: 60px; }
+  .section-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 24px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+  .section-title { font-family: 'Jost', sans-serif; font-size: 16px; font-weight: 300; letter-spacing: 0.2em; text-transform: uppercase; color: var(--text); }
+  .section-meta { font-family: 'Jost', sans-serif; font-size: 12px; color: var(--text-muted); letter-spacing: 0.15em; text-transform: uppercase; }
+  .form-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 20px 24px; }
+  .field { display: flex; flex-direction: column; gap: 8px; }
+  .field-third { grid-column: span 2; }
+  .field-half { grid-column: span 3; }
+  .field-full { grid-column: span 6; }
+  label { font-family: 'Jost', sans-serif; font-size: 11px; color: var(--text-muted); letter-spacing: 0.2em; text-transform: uppercase; }
+  input, select, textarea { background: transparent; border: none; border-bottom: 1px solid var(--border-light); color: var(--text); font-family: 'Jost', sans-serif; font-size: 14px; font-weight: 300; padding: 8px 0; outline: none; transition: border-color 0.3s; width: 100%; }
+  input:focus, select:focus, textarea:focus { border-bottom-color: var(--accent); }
+  textarea { resize: vertical; min-height: 60px; font-family: 'Jost', -apple-system, sans-serif; }
+  select { appearance: none; background-image: linear-gradient(45deg, transparent 50%, var(--text-muted) 50%), linear-gradient(135deg, var(--text-muted) 50%, transparent 50%); background-position: calc(100% - 12px) center, calc(100% - 7px) center; background-size: 5px 5px; background-repeat: no-repeat; padding-right: 24px; }
+  /* OSデフォルトの白背景を上書き(特にChrome/Edge対策) */
+  select option { background: var(--surface); color: var(--text); }
+  select option:checked, select option:hover { background: var(--border-light); color: var(--text); }
+  .actions { margin-top: 24px; display: flex; justify-content: flex-end; gap: 12px; }
+  .form-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+
+  /* Tags input (chip UI) */
+  .tags-input-wrap { position: relative; }
+  .tags-input-box { border-bottom: 1px solid var(--border-light); padding: 6px 0; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; min-height: 36px; cursor: text; transition: border-color 0.3s; }
+  .tags-input-box:focus-within { border-bottom-color: var(--accent); }
+  .tag-chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 8px 3px 10px; border: 1px solid rgba(200,184,138,0.4); background: rgba(200,184,138,0.08); color: var(--accent); font-family: 'Jost', sans-serif; font-size: 11px; letter-spacing: 0.08em; user-select: none; }
+  .tag-chip-remove { color: var(--text-muted); cursor: pointer; font-size: 12px; line-height: 1; transition: color 0.2s; }
+  .tag-chip-remove:hover { color: var(--red); }
+  .tags-input-field { flex: 1; min-width: 100px; background: transparent; border: none; color: var(--text); font-family: 'Jost', sans-serif; font-size: 13px; font-weight: 300; outline: none; padding: 4px 0; }
+  .tag-suggestions { position: absolute; top: 100%; left: 0; right: 0; background: var(--surface); border: 1px solid var(--border-light); max-height: 240px; overflow-y: auto; z-index: 50; display: none; }
+  .tag-suggestions.active { display: block; }
+  .tag-suggest-item { padding: 8px 12px; font-family: 'Jost', sans-serif; font-size: 12px; color: var(--text-dim); cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: 12px; transition: background 0.15s, border-left-color 0.15s; border-left: 2px solid transparent; }
+  .tag-suggest-item:hover, .tag-suggest-item.highlighted { background: rgba(200,184,138,0.08); border-left-color: var(--accent); color: var(--text); }
+  .tag-suggest-count { color: var(--text-muted); font-size: 10px; }
+  .tag-suggest-new { color: var(--accent); font-style: italic; }
+
+  /* Preset tags */
+  .preset-tags { margin-top: 14px; padding: 16px 18px; border: 1px solid var(--border); background: var(--surface); }
+  .preset-tags-header { font-family: 'Jost', sans-serif; font-size: 10px; color: var(--text-muted); letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 12px; }
+  .preset-group { margin-bottom: 12px; }
+  .preset-group:last-child { margin-bottom: 0; }
+  .preset-group-label { font-family: 'Jost', sans-serif; font-size: 9px; color: var(--accent); letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 6px; }
+  .preset-chip-row { display: flex; flex-wrap: wrap; gap: 6px; }
+  .preset-chip { display: inline-flex; align-items: center; padding: 4px 10px; border: 1px solid var(--border-light); background: transparent; color: var(--text-dim); font-family: 'Jost', sans-serif; font-size: 11px; letter-spacing: 0.05em; cursor: pointer; transition: all 0.2s; user-select: none; }
+  .preset-chip:hover { color: var(--accent); border-color: var(--accent); background: rgba(200,184,138,0.05); }
+  .preset-chip.active { color: var(--accent); border-color: rgba(200,184,138,0.4); background: rgba(200,184,138,0.08); cursor: default; }
+
+  /* Pattern Set (時間軸 × パターン) */
+  .pattern-set { border: 1px solid var(--border); background: var(--surface); padding: 4px 0; }
+  .pattern-row { display: grid; grid-template-columns: 60px 1fr; gap: 16px; align-items: start; padding: 12px 18px; border-bottom: 1px solid var(--border); }
+  .pattern-row:last-child { border-bottom: none; }
+  .pattern-row.has-selection { background: rgba(200,184,138,0.03); }
+  .pattern-tf-label { font-family: 'Jost', sans-serif; font-size: 12px; color: var(--text-dim); letter-spacing: 0.05em; padding-top: 4px; font-weight: 400; }
+  .pattern-row.has-selection .pattern-tf-label { color: var(--accent); }
+  .pattern-chips-wrap { display: flex; flex-direction: column; gap: 6px; }
+  .pattern-group-row { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+  .pattern-group-tag { font-family: 'Jost', sans-serif; font-size: 8px; color: var(--text-muted); letter-spacing: 0.15em; text-transform: uppercase; min-width: 50px; }
+  .pattern-chip { display: inline-flex; align-items: center; padding: 3px 9px; border: 1px solid var(--border-light); background: transparent; color: var(--text-muted); font-family: 'Jost', sans-serif; font-size: 11px; letter-spacing: 0.05em; cursor: pointer; transition: all 0.15s; user-select: none; }
+  .pattern-chip:hover { color: var(--accent); border-color: rgba(200,184,138,0.4); }
+  .pattern-chip.selected { color: var(--accent); border-color: rgba(200,184,138,0.5); background: rgba(200,184,138,0.1); }
+  .pattern-chip.selected:hover { color: var(--red); border-color: rgba(184, 107, 107, 0.4); }
+
+  /* Inline tags in Memo cell */
+  .memo-tags-inline { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+  .memo-tag { color: var(--accent); font-family: 'Jost', sans-serif; font-size: 10px; letter-spacing: 0.05em; }
+
+  /* Pattern display in memo cell */
+  .pattern-display { margin-bottom: 4px; font-family: 'Jost', sans-serif; font-size: 11px; line-height: 1.6; }
+  .pattern-display-row { display: flex; gap: 8px; align-items: baseline; }
+  .pattern-display-tf { color: var(--text-muted); min-width: 32px; font-size: 10px; letter-spacing: 0.05em; }
+  .pattern-display-items { color: var(--accent); }
+  .pattern-display-item { display: inline-block; margin-right: 8px; }
+
+  /* Inline tags in Memo cell */
+  .memo-tags-inline { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+  .memo-tag { color: var(--accent); font-family: 'Jost', sans-serif; font-size: 10px; letter-spacing: 0.05em; }
+
+  /* Table */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; }
+  thead th { font-family: 'Jost', sans-serif; font-size: 10px; font-weight: 400; color: var(--text-muted); letter-spacing: 0.2em; text-transform: uppercase; padding: 14px 12px; border-bottom: 1px solid var(--border); text-align: left; }
+  thead th.num { text-align: right; }
+  tbody tr { border-bottom: 1px solid var(--border); transition: background 0.2s; }
+  tbody tr:hover { background: var(--surface); }
+  tbody tr.alert-row { background: rgba(224, 120, 64, 0.04); }
+  tbody tr.alert-row:hover { background: rgba(224, 120, 64, 0.07); }
+  tbody td { padding: 18px 12px; color: var(--text); font-weight: 300; vertical-align: top; }
+  tbody td.num { text-align: right; font-family: 'Jost', sans-serif; font-size: 13px; }
+  .badge { display: inline-block; font-family: 'Jost', sans-serif; font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase; padding: 4px 8px; border: 1px solid var(--border-light); color: var(--text-dim); }
+  .badge.alert { color: var(--alert); border-color: rgba(224, 120, 64, 0.5); background: rgba(224, 120, 64, 0.06); }
+  .badge.watching { color: var(--accent); border-color: rgba(200, 184, 138, 0.3); }
+  .badge.traded { color: var(--text-muted); border-color: var(--border-light); background: var(--surface); }
+
+  .row-actions { display: flex; gap: 8px; justify-content: flex-end; }
+  .icon-btn { background: transparent; border: none; color: var(--text-muted); cursor: pointer; padding: 4px; font-size: 14px; transition: color 0.2s; }
+  .icon-btn:hover { color: var(--accent); }
+  .icon-btn.delete:hover { color: var(--red); }
+  .icon-btn.bolt { font-size: 16px; }
+  .icon-btn.bolt.watching { color: var(--text-muted); }
+  .icon-btn.bolt.watching:hover { color: var(--alert); }
+  .icon-btn.bolt.alert { color: var(--alert); }
+  .icon-btn.bolt.alert:hover { color: var(--text-muted); }
+  .icon-btn.send-journal { color: var(--green); font-weight: 500; }
+  .icon-btn.send-journal:hover { color: var(--text); background: rgba(107, 155, 127, 0.1); }
+
+  .empty { text-align: center; padding: 80px 20px; color: var(--text-muted); }
+  .empty-text { font-family: 'Jost', sans-serif; font-size: 16px; font-weight: 200; font-style: italic; letter-spacing: 0.08em; color: var(--text-dim); margin-bottom: 12px; }
+  .empty-sub { font-family: 'Jost', sans-serif; font-size: 10px; color: var(--text-muted); letter-spacing: 0.2em; text-transform: uppercase; }
+
+  /* Filters */
+  .filters { display: flex; gap: 16px; margin-bottom: 24px; align-items: center; flex-wrap: wrap; }
+  .filter { display: flex; align-items: center; gap: 8px; }
+  .filter label { margin-bottom: 0; }
+  .filter select { border-bottom: 1px solid var(--border-light); padding: 4px 16px 4px 0; font-size: 12px; min-width: 140px; }
+  .tag-filter-active { display: inline-flex; align-items: center; gap: 8px; padding: 4px 10px; border: 1px solid var(--accent); color: var(--accent); font-family: 'Jost', sans-serif; font-size: 11px; letter-spacing: 0.08em; }
+  .tag-filter-clear { cursor: pointer; color: var(--text-muted); font-size: 14px; line-height: 1; }
+  .tag-filter-clear:hover { color: var(--red); }
+
+  /* Tag stats */
+  .tag-stats { border: 1px solid var(--border); padding: 20px 24px; }
+  .tag-stats-block { margin-bottom: 20px; }
+  .tag-stats-block:last-child { margin-bottom: 0; }
+  .tag-stats-header-row { display: grid; grid-template-columns: 1.5fr 80px 90px; gap: 12px; padding-bottom: 10px; border-bottom: 1px solid var(--border); font-family: 'Jost', sans-serif; font-size: 9px; color: var(--text-muted); letter-spacing: 0.2em; text-transform: uppercase; }
+  .tag-stats-row { display: grid; grid-template-columns: 1.5fr 80px 90px; gap: 12px; padding: 10px 0; font-size: 13px; border-bottom: 1px solid var(--border); transition: background 0.15s; cursor: pointer; }
+  .tag-stats-row:last-child { border-bottom: none; }
+  .tag-stats-row:hover { background: var(--surface); }
+  .tag-stats-row .tag-name { color: var(--accent); font-family: 'Jost', sans-serif; }
+  .tag-stats-row .num { text-align: right; font-family: 'Jost', sans-serif; }
+  .tag-stats-row.active { background: rgba(200,184,138,0.05); border-left: 2px solid var(--accent); padding-left: 8px; }
+  .tag-stats-empty { text-align: center; padding: 32px 20px; color: var(--text-muted); font-family: 'Jost', sans-serif; font-size: 12px; font-style: italic; letter-spacing: 0.08em; }
+
+  /* Modal */
+  .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: none; align-items: center; justify-content: center; z-index: 100; padding: 40px 20px; overflow-y: auto; }
+  .modal-overlay.active { display: flex; }
+  .modal { background: var(--bg); border: 1px solid var(--border-light); padding: 40px; max-width: 900px; width: 100%; max-height: 90vh; overflow-y: auto; }
+  .modal-title { font-family: 'Jost', sans-serif; font-size: 18px; font-weight: 300; letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 28px; padding-bottom: 14px; border-bottom: 1px solid var(--border); }
+
+  footer { margin-top: 80px; padding-top: 30px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; font-family: 'Jost', sans-serif; font-size: 11px; color: var(--text-muted); letter-spacing: 0.15em; text-transform: uppercase; }
+
+  .memo-cell { max-width: 280px; color: var(--text-dim); font-size: 12px; }
+  .ticker-cell { font-family: 'Jost', sans-serif; font-weight: 400; }
+  .ticker-sub { color: var(--text-muted); font-size: 11px; font-weight: 300; display: block; margin-top: 2px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="title-block">
+    <h1>Watchlist</h1>
+    <div class="subtitle">監視銘柄 — 注目理由を構造化する</div>
+  </div>
+  <div class="header-actions">
+    <input type="file" id="csvFileInput" accept=".csv" style="display:none" onchange="importCSV(this)">
+    <button onclick="document.getElementById('csvFileInput').click()">Import CSV</button>
+    <button onclick="exportCSV()">Export CSV</button>
+  </div>
+</header>
+
+<div class="stats">
+  <div class="stat">
+    <div class="stat-label">Total</div>
+    <div class="stat-value" id="statTotal">0</div>
+    <div class="stat-sub" id="statTotalSub">Active 銘柄</div>
+  </div>
+  <div class="stat">
+    <div class="stat-label">Alert</div>
+    <div class="stat-value alert" id="statAlert">0</div>
+    <div class="stat-sub">&nbsp;</div>
+  </div>
+  <div class="stat">
+    <div class="stat-label">Watching</div>
+    <div class="stat-value watching" id="statWatching">0</div>
+    <div class="stat-sub">&nbsp;</div>
+  </div>
+</div>
+
+<!-- Add new watchlist item -->
+<section class="section">
+  <div class="section-header">
+    <div class="section-title">New Watch</div>
+  </div>
+  <div class="form-grid">
+    <div class="field field-third"><label>Ticker</label><input type="text" id="wlTicker" placeholder="6315"></div>
+    <div class="field field-third"><label>Name</label><input type="text" id="wlName" placeholder="TOWA"></div>
+    <div class="field field-third"><label>Status</label><select id="wlStatus"><option value="watching">Watching</option><option value="alert">Alert</option></select></div>
+    <div class="field field-third"><label>想定 Entry Low (任意)</label><input type="number" id="wlEntryLow" step="0.1" placeholder="2640"></div>
+    <div class="field field-third"><label>想定 Entry High (任意)</label><input type="number" id="wlEntryHigh" step="0.1" placeholder="2660"></div>
+    <div class="field field-third"><label>想定 Stop 価格 (任意)</label><input type="number" id="wlStopPrice" step="0.1" placeholder="2480"></div>
+    <div class="field field-full">
+      <label>状況セット — 時間軸 × パターン</label>
+      <div class="pattern-set" id="wlPatternSet"></div>
+    </div>
+    <div class="field field-full">
+      <label>自由タグ — 時間軸と無関係なもの (#決算待ち #IPO直後 など)</label>
+      <div class="tags-input-wrap">
+        <div class="tags-input-box" id="wlTagsBox" onclick="document.getElementById('wlTagsField').focus()">
+          <input type="text" id="wlTagsField" class="tags-input-field" placeholder="スペース/カンマ/Enter区切り">
+        </div>
+        <div class="tag-suggestions" id="wlTagSuggestions"></div>
+      </div>
+    </div>
+    <div class="field field-full"><label>メモ — 想定シナリオ・補足</label><textarea id="wlMemo" placeholder="例:緑ゾーン上限+トレンドライン接触で押し目買い狙い。日足ベースで判断、4hで反転確認したい"></textarea></div>
+  </div>
+  <div class="actions">
+    <button onclick="clearWatchlistForm()">Clear</button>
+    <button class="primary" onclick="addWatchlistItem()">Add to Watchlist</button>
+  </div>
+</section>
+
+<!-- Stats: Pattern / Timeframe / Tag -->
+<section class="section" id="tagStatsSection" style="display:none">
+  <div class="section-header">
+    <div class="section-title">Stats</div>
+    <div class="section-meta">パターン / 時間軸 / 自由タグ別の銘柄数。クリックでフィルタ</div>
+  </div>
+  <div class="tag-stats" id="tagStatsBody"></div>
+</section>
+
+<!-- Watchlist Table -->
+<section class="section">
+  <div class="section-header">
+    <div class="section-title">All Watches</div>
+    <div class="section-meta" id="watchlistCount">— 0 銘柄</div>
+  </div>
+  <div class="filters">
+    <div class="filter">
+      <label>Status</label>
+      <select id="statusFilter" onchange="renderAll()">
+        <option value="active">Active (Alert + Watching)</option>
+        <option value="alert">Alert のみ</option>
+        <option value="watching">Watching のみ</option>
+        <option value="traded">Traded のみ</option>
+        <option value="all">All</option>
+      </select>
+    </div>
+    <div class="filter">
+      <label>Sort</label>
+      <select id="sortFilter" onchange="renderWatchlist()">
+        <option value="addedDesc">追加日(新しい順)</option>
+        <option value="addedAsc">追加日(古い順)</option>
+        <option value="statusAlertFirst">Status (Alert優先)</option>
+        <option value="ticker">Ticker順</option>
+      </select>
+    </div>
+    <div id="tagFilterDisplay"></div>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Added</th>
+          <th>Ticker</th>
+          <th>Status</th>
+          <th class="num">想定 Entry</th>
+          <th class="num">想定 Stop</th>
+          <th class="num">Risk</th>
+          <th>注目理由 / メモ</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="watchlistBody"></tbody>
+    </table>
+  </div>
+</section>
+
+<!-- Edit Modal -->
+<div class="modal-overlay" id="wlEditModal">
+  <div class="modal">
+    <div class="modal-title">Edit Watch Item</div>
+    <div class="form-grid">
+      <input type="hidden" id="wlEditId">
+      <div class="field field-third"><label>Ticker</label><input type="text" id="wlEditTicker"></div>
+      <div class="field field-third"><label>Name</label><input type="text" id="wlEditName"></div>
+      <div class="field field-third"><label>Status</label><select id="wlEditStatus"><option value="watching">Watching</option><option value="alert">Alert</option><option value="traded">Traded</option></select></div>
+      <div class="field field-third"><label>想定 Entry Low (任意)</label><input type="number" id="wlEditEntryLow" step="0.1"></div>
+      <div class="field field-third"><label>想定 Entry High (任意)</label><input type="number" id="wlEditEntryHigh" step="0.1"></div>
+      <div class="field field-third"><label>想定 Stop 価格 (任意)</label><input type="number" id="wlEditStopPrice" step="0.1"></div>
+      <div class="field field-full">
+        <label>状況セット — 時間軸 × パターン</label>
+        <div class="pattern-set" id="wlEditPatternSet"></div>
+      </div>
+      <div class="field field-full">
+        <label>自由タグ</label>
+        <div class="tags-input-wrap">
+          <div class="tags-input-box" id="wlEditTagsBox" onclick="document.getElementById('wlEditTagsField').focus()">
+            <input type="text" id="wlEditTagsField" class="tags-input-field" placeholder="タグを追加">
+          </div>
+          <div class="tag-suggestions" id="wlEditTagSuggestions"></div>
+        </div>
+      </div>
+      <div class="field field-full"><label>メモ</label><textarea id="wlEditMemo"></textarea></div>
+    </div>
+    <div class="form-actions">
+      <button onclick="closeWatchlistEditModal()">Cancel</button>
+      <button class="primary" onclick="saveWatchlistEdit()">Save</button>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div>Watchlist — Local Storage</div>
+  <div id="lastUpdated">—</div>
+</footer>
+
+<script>
+  // ============================================================
+  // Watchlist
+  // localStorage key は trade_journal_watchlist_v2 (旧 v1 とは別キー)
+  // データ構造: [{ id, addedDate, ticker, name, status, entryLow, entryHigh, stopPrice, memo, tags }]
+  //   status: 'alert' | 'watching'
+  // データ構造: [{ id, addedDate, ticker, name, status, entryLow, entryHigh, stopPrice, memo, patterns, tags }]
+  //   status: 'alert' | 'watching'
+  //   entryLow / entryHigh: 想定エントリー価格レンジ
+  //   patterns: { 時間軸: [パターン...] }  例: { "日足": ["上髭","実体長"], "1h": ["陰線実体長"] }
+  //     - 時間軸ごとに複数パターン保持可
+  //     - ローソク形状もテクニカル要素もすべてここに入れる(時間軸とセットで管理)
+  //   tags: string[]  (時間軸と無関係な自由タグ。決算、ニュース系など)
+  //   旧スキーマ(entryPrice)も readEntryRange で互換読み込み
+  // ============================================================
+  const WATCHLIST_KEY = 'trade_journal_watchlist_v2';
+  // ジャーナルへの引き渡しデータを置く専用キー(同一origin前提)
+  const PENDING_IMPORT_KEY = 'trade_journal_pending_import_v1';
+  const WL_STATUS_LABELS = {
+    alert: 'Alert',
+    watching: 'Watching',
+    traded: 'Traded'
+  };
+
+  // 時間軸の定義(順序が表示順)
+  const TIMEFRAMES = ['週足', '日足', '4h', '1h', '15m'];
+
+  // パターン定義(カテゴリ別、ローソク形状・テクニカル要素)
+  // すべて時間軸ごとに紐付けて使われる
+  const PATTERN_GROUPS = {
+    'ローソク': ['上髭', '下髭', '実体長', 'はらみ', '逆つつみ'],
+    'テクニカル': ['トレンドライン', '支持帯', '抵抗帯', '出来高', 'ジャスト抱え']
+  };
+
+  // パターンフィルタの現在値(null = フィルタなし)
+  // フィルタ対象: 'pattern:上髭' / 'tf:日足' / 'tag:決算待ち' のいずれか
+  let currentFilter = null;
+
+  // ============================================================
+  // Utilities
+  // ============================================================
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+  }
+  function escapeAttr(s) {
+    if (!s) return '';
+    return String(s).replace(/[&<>"']/g, c => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+  }
+  function parseTagInput(raw) {
+    if (!raw) return [];
+    return raw.split(/[,、\s]+/).map(normalizeTag).filter(t => t.length > 0);
+  }
+  function normalizeTag(t) {
+    if (!t) return '';
+    return String(t).trim().replace(/^[##]+/, '').trim();
+  }
+  function formatTagDisplay(t) { return '#' + t; }
+
+  function loadWatchlist() {
+    try { return JSON.parse(localStorage.getItem(WATCHLIST_KEY) || '[]'); }
+    catch (e) { return []; }
+  }
+  function saveWatchlist(items) {
+    localStorage.setItem(WATCHLIST_KEY, JSON.stringify(items));
+    const now = new Date();
+    const el = document.getElementById('lastUpdated');
+    if (el) el.textContent = `Updated ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}`;
+  }
+
+  // Patterns シリアライズ: { "日足":["上髭","実体長"], "1h":["陰線実体長"] }
+  //   → "日足:上髭,実体長;1h:陰線実体長"
+  function serializePatterns(patterns) {
+    if (!patterns || typeof patterns !== 'object') return '';
+    return Object.entries(patterns)
+      .filter(([tf, arr]) => arr && arr.length > 0)
+      .map(([tf, arr]) => `${tf}:${arr.join(',')}`)
+      .join(';');
+  }
+  function deserializePatterns(str) {
+    if (!str || typeof str !== 'string') return {};
+    const out = {};
+    str.split(';').forEach(part => {
+      const [tf, patStr] = part.split(':');
+      if (!tf || !patStr) return;
+      const tfTrim = tf.trim();
+      if (!TIMEFRAMES.includes(tfTrim)) return;
+      const arr = patStr.split(',').map(s => s.trim()).filter(Boolean);
+      if (arr.length > 0) out[tfTrim] = arr;
+    });
+    return out;
+  }
+
+  // Entryのレンジ読み取り。旧スキーマ(entryPrice)も互換的に扱う。
+  // 戻り値: { low, high, isRange, singleValue }
+  //   - low/high: 数値またはnull(なし)
+  //   - isRange: 両方あればtrue
+  //   - singleValue: シングル価格(片方だけの場合の値、isRange=falseの時に有効)
+  function readEntryRange(item) {
+    let low = (typeof item.entryLow === 'number') ? item.entryLow : null;
+    let high = (typeof item.entryHigh === 'number') ? item.entryHigh : null;
+    // 旧スキーマ互換: entryPrice → entryLow
+    if (low === null && high === null && typeof item.entryPrice === 'number') {
+      low = item.entryPrice;
+    }
+    // Low > High の場合は入れ替える(入力ミスをこっそり補正)
+    if (low !== null && high !== null && low > high) {
+      [low, high] = [high, low];
+    }
+    const isRange = low !== null && high !== null && low !== high;
+    const singleValue = (!isRange) ? (low ?? high ?? null) : null;
+    return { low, high, isRange, singleValue };
+  }
+
+  // Entryの表示文字列。レンジなら "2,640〜2,660"、シングルなら "2,650"、未設定なら "—"
+  function formatEntryDisplay(item) {
+    const { low, high, isRange, singleValue } = readEntryRange(item);
+    if (isRange) {
+      return `${low.toLocaleString('ja-JP')}〜${high.toLocaleString('ja-JP')}`;
+    }
+    if (singleValue !== null) {
+      return singleValue.toLocaleString('ja-JP');
+    }
+    return '—';
+  }
+
+  // Riskの表示文字列。Entryがレンジならリスクもレンジ。
+  function formatRiskForItem(item) {
+    const { low, high, isRange, singleValue } = readEntryRange(item);
+    const stop = (typeof item.stopPrice === 'number') ? item.stopPrice : null;
+    if (stop === null) return '—';
+    if (isRange) {
+      const r1 = Math.abs(low - stop);
+      const r2 = Math.abs(high - stop);
+      const rLow = Math.min(r1, r2);
+      const rHigh = Math.max(r1, r2);
+      if (rHigh === 0) return '—';
+      if (rLow === rHigh) return `¥${Math.round(rLow).toLocaleString('ja-JP')}/株`;
+      return `¥${Math.round(rLow).toLocaleString('ja-JP')}〜${Math.round(rHigh).toLocaleString('ja-JP')}/株`;
+    }
+    if (singleValue !== null) {
+      const risk = Math.abs(singleValue - stop);
+      if (risk === 0) return '—';
+      return `¥${Math.round(risk).toLocaleString('ja-JP')}/株`;
+    }
+    return '—';
+  }
+
+  // タグ頻度: Watchlistの既存タグから頻度集計
+  function collectTagFrequency() {
+    const map = new Map();
+    loadWatchlist().forEach(item => {
+      const tags = Array.isArray(item.tags) ? item.tags : [];
+      tags.forEach(t => {
+        const key = t.toLowerCase();
+        const cur = map.get(key) || { display: t, count: 0 };
+        cur.count++;
+        map.set(key, cur);
+      });
+    });
+    return [...map.values()].sort((a, b) => b.count - a.count);
+  }
+
+  // ============================================================
+  // TagsInput (chip UI) — ジャーナル側と同じ実装
+  // ============================================================
+  function makeTagsInput(boxId, fieldId, suggestionsId) {
+    const box = document.getElementById(boxId);
+    const field = document.getElementById(fieldId);
+    const suggestions = document.getElementById(suggestionsId);
+    let tags = [];
+    let highlighted = -1;
+    let currentSuggestions = [];
+
+    function render() {
+      [...box.querySelectorAll('.tag-chip')].forEach(el => el.remove());
+      tags.forEach((t, i) => {
+        const chip = document.createElement('span');
+        chip.className = 'tag-chip';
+        chip.innerHTML = `${formatTagDisplay(escapeHtml(t))} <span class="tag-chip-remove" data-i="${i}">×</span>`;
+        chip.querySelector('.tag-chip-remove').addEventListener('click', (e) => {
+          e.stopPropagation();
+          tags.splice(i, 1);
+          render();
+          updateSuggestions();
+          notifyChange();
+        });
+        box.insertBefore(chip, field);
+      });
+    }
+
+    function addTag(t) {
+      const norm = normalizeTag(t);
+      if (!norm) return;
+      const exists = tags.some(x => x.toLowerCase() === norm.toLowerCase());
+      if (exists) return;
+      tags.push(norm);
+      render();
+      notifyChange();
+    }
+
+    // プリセットボタン側にハイライト状態を反映するためのコールバック
+    let onChangeCallback = null;
+    function notifyChange() {
+      if (typeof onChangeCallback === 'function') onChangeCallback(tags.slice());
+    }
+
+    function updateSuggestions() {
+      const q = field.value.trim();
+      const allTags = collectTagFrequency();
+      const usedLower = new Set(tags.map(t => t.toLowerCase()));
+      const qNorm = normalizeTag(q).toLowerCase();
+      let filtered;
+      if (qNorm === '') {
+        filtered = allTags.filter(it => !usedLower.has(it.display.toLowerCase())).slice(0, 8);
+      } else {
+        filtered = allTags
+          .filter(it => !usedLower.has(it.display.toLowerCase()) && it.display.toLowerCase().includes(qNorm))
+          .slice(0, 8);
+      }
+      currentSuggestions = filtered.slice();
+      const exactMatch = filtered.some(it => it.display.toLowerCase() === qNorm);
+      if (qNorm && !exactMatch) {
+        currentSuggestions.push({ display: normalizeTag(q), count: null, isNew: true });
+      }
+      highlighted = currentSuggestions.length > 0 ? 0 : -1;
+      renderSuggestions();
+    }
+
+    function renderSuggestions() {
+      if (currentSuggestions.length === 0) {
+        suggestions.classList.remove('active');
+        suggestions.innerHTML = '';
+        return;
+      }
+      suggestions.innerHTML = currentSuggestions.map((it, i) => {
+        const cls = i === highlighted ? 'tag-suggest-item highlighted' : 'tag-suggest-item';
+        const right = it.isNew ? '<span class="tag-suggest-new">new</span>' : `<span class="tag-suggest-count">${it.count}件</span>`;
+        return `<div class="${cls}" data-i="${i}">${formatTagDisplay(escapeHtml(it.display))}${right}</div>`;
+      }).join('');
+      suggestions.classList.add('active');
+      suggestions.querySelectorAll('.tag-suggest-item').forEach(el => {
+        el.addEventListener('mousedown', (e) => {
+          e.preventDefault();
+          const i = parseInt(el.dataset.i);
+          if (currentSuggestions[i]) {
+            addTag(currentSuggestions[i].display);
+            field.value = '';
+            updateSuggestions();
+            field.focus();
+          }
+        });
+      });
+    }
+
+    field.addEventListener('input', updateSuggestions);
+    field.addEventListener('focus', updateSuggestions);
+    field.addEventListener('blur', () => {
+      setTimeout(() => { suggestions.classList.remove('active'); }, 150);
+      const val = field.value.trim();
+      if (val) {
+        parseTagInput(val).forEach(addTag);
+        field.value = '';
+      }
+    });
+    field.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ',' || e.key === '、') {
+        e.preventDefault();
+        if (highlighted >= 0 && currentSuggestions[highlighted]) {
+          addTag(currentSuggestions[highlighted].display);
+        } else {
+          parseTagInput(field.value).forEach(addTag);
+        }
+        field.value = '';
+        updateSuggestions();
+      } else if (e.key === ' ') {
+        if (e.isComposing) return;
+        if (field.value.trim() === '') return;
+        e.preventDefault();
+        if (highlighted >= 0 && currentSuggestions[highlighted]) {
+          addTag(currentSuggestions[highlighted].display);
+        } else {
+          parseTagInput(field.value).forEach(addTag);
+        }
+        field.value = '';
+        updateSuggestions();
+      } else if (e.key === 'Backspace' && field.value === '' && tags.length > 0) {
+        tags.pop();
+        render();
+        updateSuggestions();
+        notifyChange();
+      } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        if (currentSuggestions.length === 0) return;
+        highlighted = (highlighted + 1) % currentSuggestions.length;
+        renderSuggestions();
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (currentSuggestions.length === 0) return;
+        highlighted = (highlighted - 1 + currentSuggestions.length) % currentSuggestions.length;
+        renderSuggestions();
+      } else if (e.key === 'Escape') {
+        suggestions.classList.remove('active');
+      }
+    });
+
+    return {
+      getTags: () => tags.slice(),
+      setTags: (arr) => {
+        tags = (arr || []).map(normalizeTag).filter(Boolean);
+        render();
+        notifyChange();
+      },
+      addTag,
+      hasTag: (t) => {
+        const norm = normalizeTag(t).toLowerCase();
+        return tags.some(x => x.toLowerCase() === norm);
+      },
+      clear: () => { tags = []; field.value = ''; render(); suggestions.classList.remove('active'); notifyChange(); },
+      onChange: (cb) => { onChangeCallback = cb; }
+    };
+  }
+
+  // ============================================================
+  // Pattern Set Controller (時間軸×パターン)
+  // ============================================================
+  // 状態: { 時間軸: [パターン...] }  例: { "日足": ["上髭","実体長"] }
+  // 時間軸ごとに、ローソク・テクニカルのパターンチップを並べてクリックでトグル選択する。
+  function makePatternSet(containerId) {
+    const container = document.getElementById(containerId);
+    let state = {}; // { tf: [pattern, ...] }
+
+    function isSelected(tf, pat) {
+      const arr = state[tf] || [];
+      return arr.includes(pat);
+    }
+
+    function toggle(tf, pat) {
+      if (!state[tf]) state[tf] = [];
+      const idx = state[tf].indexOf(pat);
+      if (idx === -1) {
+        state[tf].push(pat);
+      } else {
+        state[tf].splice(idx, 1);
+        if (state[tf].length === 0) delete state[tf];
+      }
+      render();
+    }
+
+    function render() {
+      const html = TIMEFRAMES.map(tf => {
+        const hasSelection = !!(state[tf] && state[tf].length > 0);
+        const rowCls = hasSelection ? 'pattern-row has-selection' : 'pattern-row';
+        const groupsHtml = Object.entries(PATTERN_GROUPS).map(([groupName, patterns]) => {
+          const chipsHtml = patterns.map(p => {
+            const sel = isSelected(tf, p);
+            const cls = sel ? 'pattern-chip selected' : 'pattern-chip';
+            return `<span class="${cls}" data-tf="${escapeAttr(tf)}" data-pat="${escapeAttr(p)}">${escapeHtml(p)}</span>`;
+          }).join('');
+          return `<div class="pattern-group-row"><span class="pattern-group-tag">${escapeHtml(groupName)}</span>${chipsHtml}</div>`;
+        }).join('');
+        return `<div class="${rowCls}">
+          <div class="pattern-tf-label">${escapeHtml(tf)}</div>
+          <div class="pattern-chips-wrap">${groupsHtml}</div>
+        </div>`;
+      }).join('');
+      container.innerHTML = html;
+      // bind click
+      container.querySelectorAll('.pattern-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+          toggle(chip.dataset.tf, chip.dataset.pat);
+        });
+      });
+    }
+
+    return {
+      get: () => {
+        // 空配列の時間軸を除去してから返す
+        const out = {};
+        Object.entries(state).forEach(([tf, arr]) => {
+          if (arr && arr.length > 0) out[tf] = arr.slice();
+        });
+        return out;
+      },
+      set: (data) => {
+        state = {};
+        if (data && typeof data === 'object') {
+          Object.entries(data).forEach(([tf, arr]) => {
+            if (TIMEFRAMES.includes(tf) && Array.isArray(arr)) {
+              state[tf] = arr.filter(Boolean);
+            }
+          });
+        }
+        render();
+      },
+      clear: () => { state = {}; render(); }
+    };
+  }
+
+  // ============================================================
+  // Form: Add new
+  // ============================================================
+  const wlNewTagsInput = makeTagsInput('wlTagsBox', 'wlTagsField', 'wlTagSuggestions');
+  const wlEditTagsInput = makeTagsInput('wlEditTagsBox', 'wlEditTagsField', 'wlEditTagSuggestions');
+  const wlNewPatternSet = makePatternSet('wlPatternSet');
+  const wlEditPatternSet = makePatternSet('wlEditPatternSet');
+  // 初回描画(空状態)
+  wlNewPatternSet.set({});
+  wlEditPatternSet.set({});
+
+  function addWatchlistItem() {
+    const ticker = document.getElementById('wlTicker').value.trim();
+    if (!ticker) { alert('Tickerは必須です'); return; }
+    const item = {
+      id: Date.now(),
+      addedDate: new Date().toISOString().slice(0, 10),
+      ticker,
+      name: document.getElementById('wlName').value.trim(),
+      status: document.getElementById('wlStatus').value,
+      entryLow: parseFloat(document.getElementById('wlEntryLow').value) || null,
+      entryHigh: parseFloat(document.getElementById('wlEntryHigh').value) || null,
+      stopPrice: parseFloat(document.getElementById('wlStopPrice').value) || null,
+      memo: document.getElementById('wlMemo').value.trim(),
+      patterns: wlNewPatternSet.get(),
+      tags: wlNewTagsInput.getTags()
+    };
+    const items = loadWatchlist();
+    items.unshift(item);
+    saveWatchlist(items);
+    renderAll();
+    clearWatchlistForm();
+  }
+
+  function clearWatchlistForm() {
+    ['wlTicker', 'wlName', 'wlEntryLow', 'wlEntryHigh', 'wlStopPrice', 'wlMemo'].forEach(id => {
+      document.getElementById(id).value = '';
+    });
+    document.getElementById('wlStatus').value = 'watching';
+    wlNewTagsInput.clear();
+    wlNewPatternSet.clear();
+  }
+
+  function deleteWatchlistItem(id) {
+    if (!confirm('この監視銘柄を削除しますか?')) return;
+    const items = loadWatchlist().filter(i => i.id !== id);
+    saveWatchlist(items);
+    renderAll();
+  }
+
+  // Alert ⇄ Watching トグル
+  function toggleStatus(id) {
+    const items = loadWatchlist();
+    const idx = items.findIndex(i => i.id === id);
+    if (idx === -1) return;
+    items[idx].status = items[idx].status === 'alert' ? 'watching' : 'alert';
+    saveWatchlist(items);
+    renderAll();
+  }
+
+  // ジャーナルへ送る: pending importとしてlocalStorageに置き、当該銘柄をTradedに
+  // 注: 同一origin(同じドメイン/同じプロトコル)からジャーナルが開かれている必要あり
+  //     file:// で開いてる場合は機能しない
+  function sendToJournal(id) {
+    const items = loadWatchlist();
+    const idx = items.findIndex(i => i.id === id);
+    if (idx === -1) return;
+    const item = items[idx];
+
+    // patterns を memo に組み込むためのテキスト化
+    // 例: "日足:上髭,実体長 / 1h:陰線実体長"
+    const patternsText = TIMEFRAMES
+      .filter(tf => item.patterns && item.patterns[tf] && item.patterns[tf].length > 0)
+      .map(tf => `${tf}:${item.patterns[tf].join(',')}`)
+      .join(' / ');
+
+    // ジャーナルのmemoに入れる統合テキスト
+    const memoParts = [];
+    memoParts.push(`[Watchlist] ${item.ticker}${item.name ? ' ' + item.name : ''}`);
+    if (patternsText) memoParts.push(`状況: ${patternsText}`);
+    if (item.memo) memoParts.push(item.memo);
+    const combinedMemo = memoParts.join(' / ');
+
+    // pending import payload
+    // ジャーナル側は ticker / name / stopPrice / tags / memo を読む
+    // 価格 (entry) はあえて空のまま渡す = ジャーナルで実際の約定価格を手入力する想定
+    const payload = {
+      version: 1,
+      sentAt: new Date().toISOString(),
+      sourceTicker: item.ticker,
+      sourceName: item.name || '',
+      ticker: item.ticker,
+      name: item.name || '',
+      stopPrice: (typeof item.stopPrice === 'number') ? item.stopPrice : null,
+      tags: Array.isArray(item.tags) ? item.tags.slice() : [],
+      memo: combinedMemo
+    };
+    try {
+      localStorage.setItem(PENDING_IMPORT_KEY, JSON.stringify(payload));
+    } catch (e) {
+      alert('ジャーナルへの送信に失敗しました: ' + e.message);
+      return;
+    }
+
+    // Watchlist側: ステータスを traded に
+    items[idx].status = 'traded';
+    items[idx].tradedAt = new Date().toISOString();
+    saveWatchlist(items);
+    renderAll();
+
+    alert(`${item.ticker}${item.name ? ' ' + item.name : ''} をジャーナルに送信しました。\nジャーナルのタブに切り替えると取り込みバナーが表示されます。`);
+  }
+
+  function openWatchlistEditModal(id) {
+    const item = loadWatchlist().find(i => i.id === id);
+    if (!item) return;
+    document.getElementById('wlEditId').value = item.id;
+    document.getElementById('wlEditTicker').value = item.ticker;
+    document.getElementById('wlEditName').value = item.name || '';
+    document.getElementById('wlEditStatus').value = item.status;
+    // 旧スキーマ(entryPrice)から新スキーマ(entryLow/entryHigh)への互換
+    // - entryLow/entryHighがあればそれを使う
+    // - 旧データの entryPrice は entryLow として扱う(High は空)
+    const { low, high } = readEntryRange(item);
+    document.getElementById('wlEditEntryLow').value = low ?? '';
+    document.getElementById('wlEditEntryHigh').value = high ?? '';
+    document.getElementById('wlEditStopPrice').value = item.stopPrice ?? '';
+    document.getElementById('wlEditMemo').value = item.memo || '';
+    wlEditTagsInput.setTags(item.tags || []);
+    wlEditPatternSet.set(item.patterns || {});
+    document.getElementById('wlEditModal').classList.add('active');
+  }
+
+  function closeWatchlistEditModal() {
+    document.getElementById('wlEditModal').classList.remove('active');
+  }
+
+  function saveWatchlistEdit() {
+    const id = parseInt(document.getElementById('wlEditId').value);
+    const items = loadWatchlist();
+    const idx = items.findIndex(i => i.id === id);
+    if (idx === -1) return;
+    items[idx] = {
+      ...items[idx],
+      ticker: document.getElementById('wlEditTicker').value.trim(),
+      name: document.getElementById('wlEditName').value.trim(),
+      status: document.getElementById('wlEditStatus').value,
+      entryLow: parseFloat(document.getElementById('wlEditEntryLow').value) || null,
+      entryHigh: parseFloat(document.getElementById('wlEditEntryHigh').value) || null,
+      stopPrice: parseFloat(document.getElementById('wlEditStopPrice').value) || null,
+      memo: document.getElementById('wlEditMemo').value.trim(),
+      patterns: wlEditPatternSet.get(),
+      tags: wlEditTagsInput.getTags()
+    };
+    // 旧 entryPrice は新スキーマ保存時に削除(残ってると混乱の元)
+    delete items[idx].entryPrice;
+    saveWatchlist(items);
+    closeWatchlistEditModal();
+    renderAll();
+  }
+
+  // モーダル外クリックで閉じる
+  document.getElementById('wlEditModal').addEventListener('click', e => {
+    if (e.target.id === 'wlEditModal') closeWatchlistEditModal();
+  });
+
+  // ============================================================
+  // Filters
+  // ============================================================
+  // フィルタ形式: { type: 'pattern' | 'tf' | 'tag', value: string }
+  // - pattern: パターン名で絞り込み(時間軸問わず)
+  // - tf:      時間軸で絞り込み(その時間軸にパターンが何かしらある銘柄)
+  // - tag:     自由タグで絞り込み
+  function setFilter(type, value) {
+    if (currentFilter && currentFilter.type === type && currentFilter.value.toLowerCase() === value.toLowerCase()) {
+      currentFilter = null;
+    } else {
+      currentFilter = { type, value };
+    }
+    renderAll();
+  }
+
+  function clearFilter() {
+    currentFilter = null;
+    renderAll();
+  }
+
+  function renderFilterDisplay() {
+    const el = document.getElementById('tagFilterDisplay');
+    if (!currentFilter) {
+      el.innerHTML = '';
+      return;
+    }
+    const labelMap = { pattern: 'パターン', tf: '時間軸', tag: 'タグ' };
+    const prefix = labelMap[currentFilter.type] || '';
+    const valDisp = currentFilter.type === 'tag' ? formatTagDisplay(escapeHtml(currentFilter.value)) : escapeHtml(currentFilter.value);
+    el.innerHTML = `<span class="tag-filter-active">${prefix}: ${valDisp}<span class="tag-filter-clear" onclick="clearFilter()">×</span></span>`;
+  }
+
+  // アイテムが現在フィルタに一致するか判定
+  function itemMatchesFilter(item) {
+    if (!currentFilter) return true;
+    if (currentFilter.type === 'pattern') {
+      const v = currentFilter.value.toLowerCase();
+      const patterns = item.patterns || {};
+      return Object.values(patterns).some(arr => arr.some(p => p.toLowerCase() === v));
+    }
+    if (currentFilter.type === 'tf') {
+      const v = currentFilter.value;
+      const patterns = item.patterns || {};
+      return Array.isArray(patterns[v]) && patterns[v].length > 0;
+    }
+    if (currentFilter.type === 'tag') {
+      const v = currentFilter.value.toLowerCase();
+      const tags = item.tags || [];
+      return tags.some(t => t.toLowerCase() === v);
+    }
+    return true;
+  }
+
+  // ============================================================
+  // Stats
+  // ============================================================
+  function renderStats() {
+    const items = loadWatchlist();
+    const active = items.filter(i => i.status === 'alert' || i.status === 'watching');
+    document.getElementById('statTotal').textContent = active.length;
+    document.getElementById('statAlert').textContent = items.filter(i => i.status === 'alert').length;
+    document.getElementById('statWatching').textContent = items.filter(i => i.status === 'watching').length;
+  }
+
+  // ============================================================
+  // Stats: パターン別 / 時間軸別 / 自由タグ別
+  // ============================================================
+  // 集計関数: items から { display, count, alert, watching } の配列を生成
+  // Traded ステータスの銘柄は集計から除外(振り返り用は別途見たい時に Status Filter で切り替え)
+  function aggregatePatterns(items) {
+    const active = items.filter(it => it.status !== 'traded');
+    const map = new Map();
+    active.forEach(it => {
+      const patterns = it.patterns || {};
+      const seen = new Set(); // 同一銘柄で同じパターンが複数時間軸にあっても1件カウント
+      Object.values(patterns).forEach(arr => {
+        arr.forEach(p => {
+          const k = p.toLowerCase();
+          if (seen.has(k)) return;
+          seen.add(k);
+          const cur = map.get(k) || { display: p, count: 0, alert: 0, watching: 0 };
+          cur.count++;
+          if (it.status === 'alert') cur.alert++;
+          else if (it.status === 'watching') cur.watching++;
+          map.set(k, cur);
+        });
+      });
+    });
+    return [...map.values()].sort((a, b) => b.count - a.count);
+  }
+
+  function aggregateTimeframes(items) {
+    const active = items.filter(it => it.status !== 'traded');
+    const map = new Map();
+    active.forEach(it => {
+      const patterns = it.patterns || {};
+      Object.entries(patterns).forEach(([tf, arr]) => {
+        if (!arr || arr.length === 0) return;
+        const cur = map.get(tf) || { display: tf, count: 0, alert: 0, watching: 0 };
+        cur.count++;
+        if (it.status === 'alert') cur.alert++;
+        else if (it.status === 'watching') cur.watching++;
+        map.set(tf, cur);
+      });
+    });
+    // TIMEFRAMES 順にソート
+    return TIMEFRAMES.map(tf => map.get(tf)).filter(Boolean);
+  }
+
+  function aggregateTags(items) {
+    const active = items.filter(it => it.status !== 'traded');
+    const map = new Map();
+    active.forEach(it => {
+      (it.tags || []).forEach(t => {
+        const k = t.toLowerCase();
+        const cur = map.get(k) || { display: t, count: 0, alert: 0, watching: 0 };
+        cur.count++;
+        if (it.status === 'alert') cur.alert++;
+        else if (it.status === 'watching') cur.watching++;
+        map.set(k, cur);
+      });
+    });
+    return [...map.values()].sort((a, b) => b.count - a.count);
+  }
+
+  function renderTagStats() {
+    const section = document.getElementById('tagStatsSection');
+    const body = document.getElementById('tagStatsBody');
+    const items = loadWatchlist();
+    if (items.length === 0) {
+      section.style.display = 'none';
+      return;
+    }
+    const patternAgg = aggregatePatterns(items);
+    const tfAgg = aggregateTimeframes(items);
+    const tagAgg = aggregateTags(items);
+
+    if (patternAgg.length === 0 && tfAgg.length === 0 && tagAgg.length === 0) {
+      section.style.display = 'none';
+      return;
+    }
+    section.style.display = '';
+
+    function renderBlock(title, agg, filterType, formatFn) {
+      if (agg.length === 0) return '';
+      const headerRow = `<div class="tag-stats-header-row"><div>${escapeHtml(title)}</div><div class="num">銘柄数</div><div class="num">Alert / Watch</div></div>`;
+      const rows = agg.map(t => {
+        const isActive = currentFilter && currentFilter.type === filterType && currentFilter.value.toLowerCase() === t.display.toLowerCase();
+        const valForCall = escapeAttr(t.display);
+        const disp = formatFn ? formatFn(t.display) : escapeHtml(t.display);
+        return `<div class="tag-stats-row ${isActive ? 'active' : ''}" onclick="setFilter('${filterType}','${valForCall}')">
+          <div class="tag-name">${disp}</div>
+          <div class="num">${t.count}</div>
+          <div class="num"><span style="color:var(--alert)">${t.alert}</span> / <span style="color:var(--accent)">${t.watching}</span></div>
+        </div>`;
+      }).join('');
+      return `<div class="tag-stats-block">${headerRow}${rows}</div>`;
+    }
+
+    let html = '';
+    html += renderBlock('パターン別', patternAgg, 'pattern', (v) => escapeHtml(v));
+    html += renderBlock('時間軸別', tfAgg, 'tf', (v) => escapeHtml(v));
+    html += renderBlock('自由タグ別', tagAgg, 'tag', (v) => formatTagDisplay(escapeHtml(v)));
+    body.innerHTML = html;
+  }
+
+  // ============================================================
+  // Render watchlist table
+  // ============================================================
+  function renderWatchlist() {
+    let items = loadWatchlist();
+    const tbody = document.getElementById('watchlistBody');
+    const count = document.getElementById('watchlistCount');
+
+    // Filter: status
+    // 'active' = Alert + Watching, 'all' = 全て, 他はそれぞれの単一statusのみ
+    const statusFilter = document.getElementById('statusFilter').value;
+    if (statusFilter === 'active') {
+      items = items.filter(i => i.status === 'alert' || i.status === 'watching');
+    } else if (statusFilter !== 'all') {
+      items = items.filter(i => i.status === statusFilter);
+    }
+    // Filter: pattern/tf/tag (currentFilter経由)
+    if (currentFilter) {
+      items = items.filter(itemMatchesFilter);
+    }
+    // Sort
+    const sort = document.getElementById('sortFilter').value;
+    if (sort === 'addedDesc') {
+      items.sort((a, b) => b.addedDate.localeCompare(a.addedDate) || b.id - a.id);
+    } else if (sort === 'addedAsc') {
+      items.sort((a, b) => a.addedDate.localeCompare(b.addedDate) || a.id - b.id);
+    } else if (sort === 'statusAlertFirst') {
+      items.sort((a, b) => {
+        if (a.status === b.status) return b.id - a.id;
+        return a.status === 'alert' ? -1 : 1;
+      });
+    } else if (sort === 'ticker') {
+      items.sort((a, b) => a.ticker.localeCompare(b.ticker));
+    }
+
+    const hasFilter = statusFilter !== 'all' || currentFilter;
+    count.textContent = `— ${items.length} 銘柄${hasFilter ? ' (フィルタ適用中)' : ''}`;
+
+    if (items.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="8"><div class="empty"><div class="empty-text">${hasFilter ? '該当する監視銘柄なし' : '監視銘柄なし'}</div><div class="empty-sub">${hasFilter ? 'フィルタを外してみてください' : 'New Watch から追加'}</div></div></td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = items.map(item => {
+      const statusLbl = WL_STATUS_LABELS[item.status] || item.status;
+      const statusCls = item.status;
+      const rowCls = item.status === 'alert' ? 'alert-row' : '';
+      const entryDisp = formatEntryDisplay(item);
+      const stopDisp = (typeof item.stopPrice === 'number') ? item.stopPrice.toLocaleString('ja-JP') : '—';
+      const riskDisp = formatRiskForItem(item);
+      const tk = item.name
+        ? `<span class="ticker-cell">${escapeHtml(item.ticker)}<span class="ticker-sub">${escapeHtml(item.name)}</span></span>`
+        : `<span class="ticker-cell">${escapeHtml(item.ticker)}</span>`;
+
+      // 状況セット表示: 時間軸ごとに「日足: 上髭, 実体長」形式で並べる
+      const patterns = item.patterns || {};
+      const patternRows = TIMEFRAMES.filter(tf => patterns[tf] && patterns[tf].length > 0).map(tf => {
+        const items = patterns[tf].map(p => `<span class="pattern-display-item">${escapeHtml(p)}</span>`).join('');
+        return `<div class="pattern-display-row"><span class="pattern-display-tf">${escapeHtml(tf)}</span><span class="pattern-display-items">${items}</span></div>`;
+      }).join('');
+      const patternsHtml = patternRows ? `<div class="pattern-display">${patternRows}</div>` : '';
+
+      const tags = Array.isArray(item.tags) ? item.tags : [];
+      const tagsHtml = tags.length > 0
+        ? `<div class="memo-tags-inline">${tags.map(t => `<span class="memo-tag">${formatTagDisplay(escapeHtml(t))}</span>`).join('')}</div>`
+        : '';
+      const memoHtml = item.memo ? `<div style="margin-top:4px">${escapeHtml(item.memo)}</div>` : '';
+      const cellEmpty = !patternsHtml && !tagsHtml && !memoHtml;
+      const cellContent = cellEmpty ? '<span style="color:var(--text-muted)">—</span>' : `${patternsHtml}${tagsHtml}${memoHtml}`;
+
+      // ⚡ ボタン: Watching時は薄色、Alert時は濃色。クリックでトグル。Tradedでは非表示。
+      const isTraded = item.status === 'traded';
+      const boltTitle = item.status === 'watching' ? 'Alertに格上げ' : 'Watchingに格下げ';
+      const boltCls = `icon-btn bolt ${item.status}`;
+      const boltBtn = isTraded ? '' : `<button class="${boltCls}" title="${boltTitle}" onclick="toggleStatus(${item.id})">⚡</button>`;
+      // →Journal ボタン: Tradedでない時のみ表示
+      const sendBtn = isTraded ? '' : `<button class="icon-btn send-journal" title="ジャーナルに送る" onclick="sendToJournal(${item.id})">→</button>`;
+
+      return `<tr class="${rowCls}">
+        <td style="color:var(--text-muted);font-size:12px">${item.addedDate}</td>
+        <td>${tk}</td>
+        <td><span class="badge ${statusCls}">${statusLbl}</span></td>
+        <td class="num">${entryDisp}</td>
+        <td class="num">${stopDisp}</td>
+        <td class="num" style="color:var(--text-dim);font-size:12px">${riskDisp}</td>
+        <td class="memo-cell">${cellContent}</td>
+        <td class="row-actions">
+          ${sendBtn}
+          ${boltBtn}
+          <button class="icon-btn" title="Edit" onclick="openWatchlistEditModal(${item.id})">✎</button>
+          <button class="icon-btn delete" title="Delete" onclick="deleteWatchlistItem(${item.id})">×</button>
+        </td>
+      </tr>`;
+    }).join('');
+  }
+
+  // ============================================================
+  // CSV Import / Export
+  // ============================================================
+  function exportCSV() {
+    const items = loadWatchlist();
+    if (items.length === 0) { alert('監視銘柄がありません'); return; }
+    const headers = ['AddedDate', 'Ticker', 'Name', 'Status', 'EntryLow', 'EntryHigh', 'StopPrice', 'Patterns', 'Tags', 'Memo'];
+    const rows = items.map(i => {
+      const { low, high } = readEntryRange(i);
+      // Patterns はセミコロン区切りで: "日足:上髭,実体長;1h:陰線実体長"
+      const patternsStr = serializePatterns(i.patterns || {});
+      return [
+        i.addedDate,
+        i.ticker,
+        i.name || '',
+        i.status,
+        low ?? '',
+        high ?? '',
+        i.stopPrice ?? '',
+        patternsStr.replace(/"/g, '""'),
+        Array.isArray(i.tags) ? i.tags.join(' ') : '',
+        (i.memo || '').replace(/"/g, '""')
+      ];
+    });
+    const csv = [headers, ...rows].map(r => r.map(c => `"${c}"`).join(',')).join('\n');
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `watchlist_${new Date().toISOString().slice(0,10)}.csv`;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 100);
+  }
+
+  function parseCSV(text) {
+    if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+    const rows = [];
+    let cur = [], field = '', inQuotes = false;
+    for (let i = 0; i < text.length; i++) {
+      const c = text[i], next = text[i + 1];
+      if (inQuotes) {
+        if (c === '"' && next === '"') { field += '"'; i++; }
+        else if (c === '"') { inQuotes = false; }
+        else { field += c; }
+      } else {
+        if (c === '"') { inQuotes = true; }
+        else if (c === ',') { cur.push(field); field = ''; }
+        else if (c === '\n') { cur.push(field); rows.push(cur); cur = []; field = ''; }
+        else if (c === '\r') { /* skip */ }
+        else { field += c; }
+      }
+    }
+    if (field !== '' || cur.length > 0) { cur.push(field); rows.push(cur); }
+    return rows;
+  }
+
+  function importCSV(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const text = e.target.result;
+        const rows = parseCSV(text);
+        if (rows.length < 2) { alert('CSVにデータがありません'); return; }
+        const headers = rows[0];
+        const idx = {};
+        headers.forEach((h, i) => { idx[h.trim()] = i; });
+        const required = ['Ticker'];
+        const missing = required.filter(h => !(h in idx));
+        if (missing.length > 0) {
+          alert(`必須ヘッダが不足: ${missing.join(', ')}`);
+          return;
+        }
+        const parseNum = (v) => { const n = parseFloat(v); return isNaN(n) ? null : n; };
+        const imported = [];
+        for (let r = 1; r < rows.length; r++) {
+          const row = rows[r];
+          if (row.length < 1 || !row[idx['Ticker']]) continue;
+          const get = (key) => key in idx ? (row[idx[key]] || '') : '';
+          const tagsRaw = get('Tags');
+          const tags = tagsRaw ? tagsRaw.split(/\s+/).map(normalizeTag).filter(Boolean) : [];
+          // status正規化: alert/watching以外は watching に倒す
+          let st = get('Status').trim().toLowerCase();
+          if (st !== 'alert' && st !== 'watching') st = 'watching';
+          imported.push({
+            id: Date.now() + r,
+            addedDate: get('AddedDate') || new Date().toISOString().slice(0, 10),
+            ticker: get('Ticker'),
+            name: get('Name'),
+            status: st,
+            // 新形式(EntryLow/EntryHigh)があればそれを優先。
+            // 旧形式(EntryPrice)しかない場合は EntryLow として読む。
+            entryLow: parseNum(get('EntryLow')) ?? parseNum(get('EntryPrice')),
+            entryHigh: parseNum(get('EntryHigh')),
+            stopPrice: parseNum(get('StopPrice')),
+            patterns: deserializePatterns(get('Patterns')),
+            tags,
+            memo: get('Memo')
+          });
+        }
+        if (imported.length === 0) { alert('インポート可能な行がありません'); return; }
+        const choice = confirm(`${imported.length}件の監視銘柄をインポートします。\n\nOK = 既存に追加 / Cancel = 全置換`);
+        if (choice) {
+          const existing = loadWatchlist();
+          saveWatchlist([...imported, ...existing]);
+        } else {
+          if (!confirm('既存のデータをすべて削除して置換します。本当によろしいですか?')) {
+            input.value = '';
+            return;
+          }
+          saveWatchlist(imported);
+        }
+        renderAll();
+        alert(`${imported.length}件をインポートしました`);
+      } catch (err) {
+        console.error(err);
+        alert('インポートエラー: ' + err.message);
+      }
+      input.value = '';
+    };
+    reader.readAsText(file, 'utf-8');
+  }
+
+  // ============================================================
+  // Render all
+  // ============================================================
+  function renderAll() {
+    renderStats();
+    renderTagStats();
+    renderFilterDisplay();
+    renderWatchlist();
+  }
+
+  renderAll();
+</script>
+
+</body>
+</html>
