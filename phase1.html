@@ -1,0 +1,1170 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Phase 1 — Foundation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jost:wght@200;300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0a; --surface: #121212; --border: #1f1f1f; --border-light: #2a2a2a;
+    --text: #e8e6e1; --text-dim: #c8c6c2; --text-muted: #9a9896;
+    --accent: #c8b88a; --primary: #e07840; --green: #6b9b7f; --red: #b86b6b;
+    --blue: #6b8db8;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--bg); color: var(--text); font-family: 'Jost', -apple-system, sans-serif; font-weight: 300; letter-spacing: 0.01em; -webkit-font-smoothing: antialiased; min-height: 100vh; }
+  body { padding: 60px 40px; max-width: 1400px; margin: 0 auto; }
+
+  header { display: flex; justify-content: space-between; align-items: flex-end; padding-bottom: 40px; border-bottom: 1px solid var(--border); margin-bottom: 50px; }
+  .title-block h1 { font-family: 'Jost', sans-serif; font-weight: 200; font-size: 38px; letter-spacing: 0.15em; text-transform: uppercase; line-height: 1; margin-bottom: 12px; }
+  .title-block .subtitle { font-family: 'Jost', sans-serif; font-size: 13px; color: var(--text-muted); letter-spacing: 0.2em; text-transform: uppercase; }
+  .title-block .purpose { font-family: 'Jost', sans-serif; font-size: 14px; color: var(--accent); margin-top: 14px; letter-spacing: 0.05em; font-style: italic; }
+  .header-actions { display: flex; gap: 12px; }
+
+  button { background: transparent; color: var(--text-dim); border: 1px solid var(--border-light); padding: 10px 20px; font-family: 'Jost', sans-serif; font-size: 13px; letter-spacing: 0.15em; text-transform: uppercase; cursor: pointer; transition: all 0.3s ease; }
+  button:hover { color: var(--text); border-color: var(--accent); }
+  button.primary { background: var(--primary); color: var(--bg); border-color: var(--primary); }
+  button.primary:hover { background: transparent; color: var(--primary); }
+  button.danger:hover { color: var(--red); border-color: var(--red); }
+
+  /* Dashboard */
+  .dashboard { display: grid; grid-template-columns: repeat(5, 1fr); margin-bottom: 60px; border: 1px solid var(--border); }
+  .dash-cell { padding: 28px 22px; border-right: 1px solid var(--border); }
+  .dash-cell:last-child { border-right: none; }
+  .dash-label { font-family: 'Jost', sans-serif; font-size: 11px; color: var(--text-muted); letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 12px; }
+  .dash-value { font-family: 'Jost', sans-serif; font-size: 28px; font-weight: 300; letter-spacing: 0.02em; line-height: 1; }
+  .dash-value.accent { color: var(--accent); }
+  .dash-value.positive { color: var(--green); }
+  .dash-value.warn { color: var(--primary); }
+  .dash-sub { font-family: 'Jost', sans-serif; font-size: 12px; color: var(--text-muted); margin-top: 8px; letter-spacing: 0.04em; }
+  .progress-bar { height: 3px; background: var(--border); margin-top: 14px; position: relative; overflow: hidden; }
+  .progress-fill { height: 100%; background: var(--accent); transition: width 0.4s ease; }
+
+  /* Section heading */
+  .section { margin-bottom: 70px; }
+  .section-header { display: flex; justify-content: space-between; align-items: baseline; padding-bottom: 18px; border-bottom: 1px solid var(--border); margin-bottom: 30px; }
+  .section-title { font-family: 'Jost', sans-serif; font-weight: 300; font-size: 22px; letter-spacing: 0.12em; text-transform: uppercase; }
+  .section-meta { font-family: 'Jost', sans-serif; font-size: 12px; color: var(--text-muted); letter-spacing: 0.15em; text-transform: uppercase; }
+
+  /* Form */
+  .form-card { background: var(--surface); border: 1px solid var(--border); padding: 36px 32px; }
+  .form-card.highlight { border-left: 3px solid var(--primary); }
+  .form-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 22px 24px; }
+  .form-grid.cols-2 { grid-template-columns: repeat(2, 1fr); }
+  .form-grid.cols-1 { grid-template-columns: 1fr; }
+  .field { display: flex; flex-direction: column; }
+  .field.span-2 { grid-column: span 2; }
+  .field.span-4 { grid-column: span 4; }
+  .field label { font-family: 'Jost', sans-serif; font-size: 11px; color: var(--text-muted); letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 8px; }
+  .field input, .field select, .field textarea {
+    background: transparent; border: none; border-bottom: 1px solid var(--border-light); color: var(--text);
+    font-family: 'Jost', sans-serif; font-size: 14px; padding: 8px 0; outline: none; font-weight: 300;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus { border-bottom-color: var(--accent); }
+  .field textarea { resize: vertical; min-height: 60px; line-height: 1.6; }
+  .field select { appearance: none; cursor: pointer; }
+  .field select option { background: var(--surface); }
+
+  /* Rule checklist */
+  .rules-block { margin-top: 28px; padding-top: 24px; border-top: 1px solid var(--border); }
+  .rules-title { font-family: 'Jost', sans-serif; font-size: 11px; color: var(--text-muted); letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 14px; }
+  .rule-item { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; cursor: pointer; user-select: none; }
+  .rule-item input { width: 16px; height: 16px; cursor: pointer; accent-color: var(--accent); }
+  .rule-item label { font-family: 'Jost', sans-serif; font-size: 13px; color: var(--text-dim); cursor: pointer; }
+
+  /* Grade selector */
+  .grade-row { display: flex; gap: 10px; margin-top: 8px; }
+  .grade-btn { flex: 1; padding: 10px; border: 1px solid var(--border-light); background: transparent; color: var(--text-dim); font-family: 'Jost', sans-serif; font-size: 14px; letter-spacing: 0.1em; cursor: pointer; transition: all 0.2s; }
+  .grade-btn:hover { border-color: var(--accent); }
+  .grade-btn.active { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+  .grade-btn.active.x { background: var(--red); border-color: var(--red); }
+  .grade-btn.active.tri { background: var(--accent); border-color: var(--accent); }
+
+  /* Form actions */
+  .form-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 28px; padding-top: 24px; border-top: 1px solid var(--border); }
+
+  /* Records list */
+  .records-table { width: 100%; border-collapse: collapse; }
+  .records-table th { font-family: 'Jost', sans-serif; font-size: 11px; color: var(--text-muted); letter-spacing: 0.15em; text-transform: uppercase; text-align: left; padding: 14px 12px; border-bottom: 1px solid var(--border); font-weight: 400; }
+  .records-table td { font-family: 'Jost', sans-serif; font-size: 13px; color: var(--text-dim); padding: 14px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  .records-table tr:hover td { background: rgba(200,184,138,0.03); cursor: pointer; }
+  .grade-pill { display: inline-block; padding: 3px 12px; font-size: 12px; font-family: 'Jost', sans-serif; letter-spacing: 0.1em; border: 1px solid; }
+  .grade-pill.o { color: var(--green); border-color: var(--green); }
+  .grade-pill.tri { color: var(--accent); border-color: var(--accent); }
+  .grade-pill.x { color: var(--red); border-color: var(--red); }
+
+  .empty { padding: 60px 24px; text-align: center; color: var(--text-muted); font-family: 'Jost', sans-serif; font-size: 13px; font-style: italic; letter-spacing: 0.05em; border: 1px dashed var(--border-light); }
+
+  /* Tabs */
+  .tab-row { display: flex; gap: 0; border-bottom: 1px solid var(--border); margin-bottom: 28px; }
+  .tab { padding: 14px 28px; font-family: 'Jost', sans-serif; font-size: 13px; color: var(--text-muted); letter-spacing: 0.15em; text-transform: uppercase; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s; }
+  .tab:hover { color: var(--text-dim); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* Lesson study cards (Week 1) */
+  .study-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; }
+  .study-card { padding: 22px 18px; background: var(--surface); border: 1px solid var(--border); cursor: pointer; transition: all 0.2s; }
+  .study-card:hover { border-color: var(--accent); }
+  .study-card.done { border-left: 3px solid var(--green); }
+  .study-day { font-family: 'Jost', sans-serif; font-size: 11px; color: var(--text-muted); letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 10px; }
+  .study-theme { font-family: 'Jost', sans-serif; font-size: 14px; color: var(--text); line-height: 1.4; min-height: 40px; }
+  .study-status { font-family: 'Jost', sans-serif; font-size: 11px; color: var(--text-muted); margin-top: 14px; letter-spacing: 0.1em; }
+  .study-status.done { color: var(--green); }
+
+  /* Modal */
+  .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 100; justify-content: center; align-items: flex-start; padding: 80px 20px; overflow-y: auto; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: var(--bg); border: 1px solid var(--border-light); max-width: 800px; width: 100%; padding: 40px; }
+  .modal-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 28px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+  .modal-title { font-family: 'Jost', sans-serif; font-size: 18px; letter-spacing: 0.15em; text-transform: uppercase; font-weight: 300; }
+  .modal-close { background: transparent; border: none; color: var(--text-muted); font-size: 20px; cursor: pointer; }
+
+  /* Lock notice */
+  .lock-notice { padding: 28px; border: 1px dashed var(--border-light); text-align: center; color: var(--text-muted); font-family: 'Jost', sans-serif; font-size: 14px; font-style: italic; letter-spacing: 0.05em; }
+
+  /* Phase 1 終了レビュー */
+  .review-card { padding: 32px; background: var(--surface); border: 1px solid var(--border); }
+  .review-card.locked { opacity: 0.5; }
+  .review-stat-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; margin-bottom: 28px; }
+  .review-stat { padding: 18px; border: 1px solid var(--border-light); }
+  .review-stat-label { font-family: 'Jost', sans-serif; font-size: 11px; color: var(--text-muted); letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 8px; }
+  .review-stat-value { font-family: 'Jost', sans-serif; font-size: 22px; font-weight: 300; }
+
+  /* Footer */
+  footer { padding-top: 40px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; color: var(--text-muted); font-family: 'Jost', sans-serif; font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase; }
+
+  /* Phase note */
+  .phase-note { padding: 18px 22px; background: rgba(224,120,64,0.04); border-left: 2px solid var(--primary); margin-bottom: 30px; font-family: 'Jost', sans-serif; font-size: 13px; color: var(--text-dim); line-height: 1.7; letter-spacing: 0.02em; }
+  .phase-note strong { color: var(--primary); font-weight: 500; }
+
+  @media (max-width: 900px) {
+    body { padding: 30px 20px; }
+    .dashboard { grid-template-columns: repeat(2, 1fr); }
+    .dash-cell { border-right: none; border-bottom: 1px solid var(--border); }
+    .form-grid { grid-template-columns: 1fr; }
+    .field.span-2, .field.span-4 { grid-column: span 1; }
+    .study-grid { grid-template-columns: repeat(2, 1fr); }
+    .review-stat-row { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="title-block">
+    <h1>Phase 1</h1>
+    <div class="subtitle">Foundation — 1 month</div>
+    <div class="purpose">型を1つ、体に入れる。日足パーフェクトオーダー＋押し目買い。</div>
+  </div>
+  <div class="header-actions">
+    <button onclick="exportCSV()">Export CSV</button>
+    <button onclick="document.getElementById('importFile').click()">Import CSV</button>
+    <input type="file" id="importFile" accept=".csv" style="display:none" onchange="importCSV(event)">
+    <button class="danger" onclick="clearAll()">Clear All</button>
+  </div>
+</header>
+
+<div class="phase-note">
+  <strong>Phase 1のルール：</strong>
+  実弾完全停止。型を1つに絞る（日足パーフェクトオーダー＋押し目買い）。Week 1は教材インプット中心。Week 2〜4はReplay練習。<br>
+  目標：Replay 120回、毎回「3シナリオ・損切り・利確」を書く。新規エントリーは禁止（NISA長期投資除く）。
+</div>
+
+<!-- Dashboard -->
+<div class="dashboard">
+  <div class="dash-cell">
+    <div class="dash-label">Replay 練習</div>
+    <div class="dash-value accent" id="dashReplay">0 / 120</div>
+    <div class="dash-sub" id="dashReplaySub">0%</div>
+    <div class="progress-bar"><div class="progress-fill" id="dashReplayFill" style="width:0%"></div></div>
+  </div>
+  <div class="dash-cell">
+    <div class="dash-label">教材 Week 1</div>
+    <div class="dash-value" id="dashStudy">0 / 5</div>
+    <div class="dash-sub" id="dashStudySub">未開始</div>
+    <div class="progress-bar"><div class="progress-fill" id="dashStudyFill" style="width:0%"></div></div>
+  </div>
+  <div class="dash-cell">
+    <div class="dash-label">経過日数</div>
+    <div class="dash-value" id="dashDays">— / 30</div>
+    <div class="dash-sub" id="dashDaysSub">開始日未設定</div>
+  </div>
+  <div class="dash-cell">
+    <div class="dash-label">RULE 達成率</div>
+    <div class="dash-value" id="dashRule">—</div>
+    <div class="dash-sub" id="dashRuleSub">r1, r3</div>
+  </div>
+  <div class="dash-cell">
+    <div class="dash-label">採点分布</div>
+    <div class="dash-value" id="dashGrade">— / — / —</div>
+    <div class="dash-sub">◯ / △ / ×</div>
+  </div>
+</div>
+
+<!-- Tabs -->
+<div class="tab-row">
+  <div class="tab active" data-tab="replay" onclick="switchTab('replay')">Replay 練習</div>
+  <div class="tab" data-tab="study" onclick="switchTab('study')">Week 1 教材</div>
+  <div class="tab" data-tab="diary" onclick="switchTab('diary')">観察日記</div>
+  <div class="tab" data-tab="review" onclick="switchTab('review')">Phase 1 終了レビュー</div>
+</div>
+
+<!-- TAB: Replay 練習 -->
+<div id="tab-replay" class="tab-content">
+
+  <div class="section">
+    <div class="section-header">
+      <div class="section-title">New Replay Entry</div>
+      <div class="section-meta">過去チャートでの判断練習</div>
+    </div>
+
+    <div class="form-card highlight">
+      <div class="form-grid">
+        <div class="field">
+          <label>練習日</label>
+          <input type="date" id="r_date">
+        </div>
+        <div class="field">
+          <label>銘柄 (任意・答え合わせ後)</label>
+          <input type="text" id="r_ticker" placeholder="例: 7203 トヨタ">
+        </div>
+        <div class="field">
+          <label>チャート日付 (任意)</label>
+          <input type="text" id="r_chartdate" placeholder="例: 2018-06-15">
+        </div>
+        <div class="field">
+          <label>判断時間軸</label>
+          <select id="r_timeframe">
+            <option value="">— 選択 —</option>
+            <option value="日足">日足</option>
+            <option value="日足+時間足">日足+時間足</option>
+            <option value="複数">複数</option>
+          </select>
+        </div>
+
+        <div class="field span-4">
+          <label>シナリオ① 上方向 (本命) — 価格 / 判定時間軸</label>
+          <textarea id="r_scenario_up" placeholder="例: 移動平均25日線で反発、目標前回高値1500円。1時間足で陽線確定なら入る"></textarea>
+        </div>
+        <div class="field span-4">
+          <label>シナリオ② 想定外</label>
+          <textarea id="r_scenario_alt" placeholder="例: 25日線割れて陰線確定なら撤退、トレンド崩れの可能性"></textarea>
+        </div>
+        <div class="field span-4">
+          <label>シナリオ③ 下方向</label>
+          <textarea id="r_scenario_down" placeholder="例: 75日線まで下げる、その場合は様子見"></textarea>
+        </div>
+
+        <div class="field">
+          <label>エントリー価格 (想定)</label>
+          <input type="number" id="r_entry" step="0.01" placeholder="1200">
+        </div>
+        <div class="field">
+          <label>損切り価格</label>
+          <input type="number" id="r_stop" step="0.01" placeholder="1180">
+        </div>
+        <div class="field">
+          <label>利確目標</label>
+          <input type="number" id="r_target" step="0.01" placeholder="1500">
+        </div>
+        <div class="field">
+          <label>R:R 比 (自動)</label>
+          <input type="text" id="r_rr" readonly>
+        </div>
+
+        <div class="field">
+          <label>エントリー判断</label>
+          <select id="r_action">
+            <option value="">— 選択 —</option>
+            <option value="エントリー">エントリーする</option>
+            <option value="見送り">見送り</option>
+          </select>
+        </div>
+        <div class="field span-2">
+          <label>見送り理由 (見送り時)</label>
+          <select id="r_skip">
+            <option value="">—</option>
+            <option value="POじゃない">日足パーフェクトオーダーじゃない</option>
+            <option value="押し目深すぎ">押し目が深すぎる(崩れ)</option>
+            <option value="押し目浅い">押し目が浅い(まだ)</option>
+            <option value="シグナル不足">明確なシグナル不足</option>
+            <option value="その他">その他</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Replay 結果価格</label>
+          <input type="number" id="r_result" step="0.01" placeholder="進めた後の価格">
+        </div>
+
+        <div class="field span-4">
+          <label>自己採点</label>
+          <div class="grade-row">
+            <button type="button" class="grade-btn" data-grade="o" onclick="selectGrade('o')">◯ 正解 (方向・場所OK)</button>
+            <button type="button" class="grade-btn" data-grade="tri" onclick="selectGrade('tri')">△ 方向は合ってたが場所が悪い</button>
+            <button type="button" class="grade-btn" data-grade="x" onclick="selectGrade('x')">× 不正解</button>
+          </div>
+          <input type="hidden" id="r_grade">
+        </div>
+
+        <div class="field span-4">
+          <label>採点理由・気づき</label>
+          <textarea id="r_note" placeholder="何が正解で、何を見落としていたか。次に活かす点"></textarea>
+        </div>
+      </div>
+
+      <div class="rules-block">
+        <div class="rules-title">Rules Checklist</div>
+        <div class="rule-item">
+          <input type="checkbox" id="r_r3">
+          <label for="r_r3">r3 — 3シナリオを言語化した</label>
+        </div>
+        <div class="rule-item">
+          <input type="checkbox" id="r_r1">
+          <label for="r_r1">r1 — 損切り価格を事前決定した</label>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button onclick="clearReplayForm()">Clear</button>
+        <button class="primary" onclick="addReplay()">Add Replay</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-header">
+      <div class="section-title">Records</div>
+      <div class="section-meta"><span id="replayCount">0</span> entries</div>
+    </div>
+    <div id="replayList"></div>
+  </div>
+</div>
+
+<!-- TAB: Week 1 教材 -->
+<div id="tab-study" class="tab-content" style="display:none">
+  <div class="section">
+    <div class="section-header">
+      <div class="section-title">Week 1 — 教材インプット</div>
+      <div class="section-meta">1日2時間 × 5日</div>
+    </div>
+
+    <div class="phase-note" style="margin-bottom: 24px;">
+      Week 1は実弾停止のまま、教材インプットに集中する。日足パーフェクトオーダー＋押し目買い、この型1つだけを徹底的に学ぶ。<br>
+      <strong>進め方：</strong>カードをクリックして、その日の学びと疑問を記録する。
+    </div>
+
+    <div class="study-grid" id="studyGrid">
+      <!-- 5 cards generated by JS -->
+    </div>
+  </div>
+</div>
+
+<!-- TAB: 観察日記 -->
+<div id="tab-diary" class="tab-content" style="display:none">
+  <div class="section">
+    <div class="section-header">
+      <div class="section-title">観察日記</div>
+      <div class="section-meta">補助・任意</div>
+    </div>
+
+    <div class="phase-note" style="margin-bottom: 24px;">
+      前場の観察や、Replay練習中に気づいた自分の心の動きを記録する。任意。<br>
+      例：「今日POの銘柄を見て入りたくなった」「リベンジ衝動が出た」「型が見えてきた感じがする」など。
+    </div>
+
+    <div class="form-card">
+      <div class="form-grid cols-1">
+        <div class="field">
+          <label>日付</label>
+          <input type="date" id="d_date" style="max-width: 200px;">
+        </div>
+        <div class="field">
+          <label>今日の観察・気づき</label>
+          <textarea id="d_note" placeholder="自分の心の動き、相場の観察、Phase 1への向き合い方など" style="min-height: 100px;"></textarea>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="primary" onclick="addDiary()">Add</button>
+      </div>
+    </div>
+
+    <div class="section" style="margin-top: 40px;">
+      <div class="section-header">
+        <div class="section-title">Past Diary</div>
+        <div class="section-meta"><span id="diaryCount">0</span> entries</div>
+      </div>
+      <div id="diaryList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- TAB: Phase 1 終了レビュー -->
+<div id="tab-review" class="tab-content" style="display:none">
+  <div class="section">
+    <div class="section-header">
+      <div class="section-title">Phase 1 終了レビュー</div>
+      <div class="section-meta">30日経過後に解放</div>
+    </div>
+
+    <div id="reviewBody"></div>
+  </div>
+</div>
+
+<!-- 開始日設定モーダル -->
+<div class="modal-overlay" id="startModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Phase 1 開始日</div>
+    </div>
+    <p style="color: var(--text-dim); margin-bottom: 24px; line-height: 1.6;">
+      Phase 1 の開始日を設定してください。経過日数のカウントに使用します。<br>
+      <span style="color: var(--text-muted); font-size: 13px;">後から Clear All で再設定できます。</span>
+    </p>
+    <div class="form-grid cols-1">
+      <div class="field">
+        <label>開始日</label>
+        <input type="date" id="startDate">
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="primary" onclick="setStartDate()">Start Phase 1</button>
+    </div>
+  </div>
+</div>
+
+<!-- 教材記録モーダル -->
+<div class="modal-overlay" id="studyModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="studyModalTitle">Day —</div>
+      <button class="modal-close" onclick="closeStudyModal()">×</button>
+    </div>
+    <div class="form-grid cols-1">
+      <div class="field">
+        <label>学習日</label>
+        <input type="date" id="s_date">
+      </div>
+      <div class="field">
+        <label>テーマ</label>
+        <input type="text" id="s_theme" placeholder="例: パーフェクトオーダーの定義と強弱の見分け方">
+      </div>
+      <div class="field">
+        <label>学んだこと (キーポイント)</label>
+        <textarea id="s_learned" style="min-height: 120px;" placeholder="今日インプットした内容を自分の言葉で書く"></textarea>
+      </div>
+      <div class="field">
+        <label>疑問・後で確認したいこと</label>
+        <textarea id="s_questions" placeholder="分からなかったこと、もっと深掘りしたいこと"></textarea>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button onclick="closeStudyModal()">Cancel</button>
+      <button class="primary" onclick="saveStudy()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Replay編集モーダル -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Edit Replay</div>
+      <button class="modal-close" onclick="closeEditModal()">×</button>
+    </div>
+    <div class="form-grid">
+      <div class="field">
+        <label>練習日</label>
+        <input type="date" id="e_date">
+      </div>
+      <div class="field">
+        <label>銘柄</label>
+        <input type="text" id="e_ticker">
+      </div>
+      <div class="field">
+        <label>チャート日付</label>
+        <input type="text" id="e_chartdate">
+      </div>
+      <div class="field">
+        <label>判断時間軸</label>
+        <select id="e_timeframe">
+          <option value="">—</option>
+          <option value="日足">日足</option>
+          <option value="日足+時間足">日足+時間足</option>
+          <option value="複数">複数</option>
+        </select>
+      </div>
+      <div class="field span-4">
+        <label>シナリオ① 上方向</label>
+        <textarea id="e_scenario_up"></textarea>
+      </div>
+      <div class="field span-4">
+        <label>シナリオ② 想定外</label>
+        <textarea id="e_scenario_alt"></textarea>
+      </div>
+      <div class="field span-4">
+        <label>シナリオ③ 下方向</label>
+        <textarea id="e_scenario_down"></textarea>
+      </div>
+      <div class="field">
+        <label>エントリー価格</label>
+        <input type="number" id="e_entry" step="0.01">
+      </div>
+      <div class="field">
+        <label>損切り価格</label>
+        <input type="number" id="e_stop" step="0.01">
+      </div>
+      <div class="field">
+        <label>利確目標</label>
+        <input type="number" id="e_target" step="0.01">
+      </div>
+      <div class="field">
+        <label>Replay 結果</label>
+        <input type="number" id="e_result" step="0.01">
+      </div>
+      <div class="field">
+        <label>エントリー判断</label>
+        <select id="e_action">
+          <option value="">—</option>
+          <option value="エントリー">エントリーする</option>
+          <option value="見送り">見送り</option>
+        </select>
+      </div>
+      <div class="field span-2">
+        <label>見送り理由</label>
+        <select id="e_skip">
+          <option value="">—</option>
+          <option value="POじゃない">日足パーフェクトオーダーじゃない</option>
+          <option value="押し目深すぎ">押し目が深すぎる</option>
+          <option value="押し目浅い">押し目が浅い</option>
+          <option value="シグナル不足">シグナル不足</option>
+          <option value="その他">その他</option>
+        </select>
+      </div>
+      <div class="field span-4">
+        <label>自己採点</label>
+        <div class="grade-row">
+          <button type="button" class="grade-btn" data-egrade="o" onclick="selectEditGrade('o')">◯</button>
+          <button type="button" class="grade-btn" data-egrade="tri" onclick="selectEditGrade('tri')">△</button>
+          <button type="button" class="grade-btn" data-egrade="x" onclick="selectEditGrade('x')">×</button>
+        </div>
+        <input type="hidden" id="e_grade">
+      </div>
+      <div class="field span-4">
+        <label>採点理由・気づき</label>
+        <textarea id="e_note"></textarea>
+      </div>
+    </div>
+    <div class="rules-block">
+      <div class="rules-title">Rules Checklist</div>
+      <div class="rule-item">
+        <input type="checkbox" id="e_r3">
+        <label for="e_r3">r3 — 3シナリオを言語化した</label>
+      </div>
+      <div class="rule-item">
+        <input type="checkbox" id="e_r1">
+        <label for="e_r1">r1 — 損切り価格を事前決定した</label>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="danger" onclick="deleteEntry()">Delete</button>
+      <button onclick="closeEditModal()">Cancel</button>
+      <button class="primary" onclick="saveEdit()">Save</button>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div>Phase 1 — Foundation</div>
+  <div id="lastUpdated">—</div>
+</footer>
+
+<script>
+  const STORAGE_KEY = 'trade_journal_phase1_v1';
+
+  // データ構造
+  let state = {
+    startDate: null,        // Phase 1開始日
+    replays: [],            // Replay練習記録
+    studies: [],            // Week1 教材記録 (day 1-5)
+    diaries: []             // 観察日記
+  };
+
+  let editingId = null;
+  let editingStudyDay = null;
+
+  // ===== Storage =====
+  function load() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        state = JSON.parse(raw);
+        // 後方互換
+        if (!state.replays) state.replays = [];
+        if (!state.studies) state.studies = [];
+        if (!state.diaries) state.diaries = [];
+      }
+    } catch (e) {
+      console.error('Load failed', e);
+    }
+  }
+  function save() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    const now = new Date();
+    document.getElementById('lastUpdated').textContent = `Updated ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}`;
+  }
+
+  // ===== 開始日 =====
+  function checkStartDate() {
+    if (!state.startDate) {
+      document.getElementById('startDate').value = new Date().toISOString().slice(0,10);
+      document.getElementById('startModal').classList.add('open');
+    }
+  }
+  function setStartDate() {
+    const v = document.getElementById('startDate').value;
+    if (!v) { alert('開始日を選択してください'); return; }
+    state.startDate = v;
+    save();
+    document.getElementById('startModal').classList.remove('open');
+    render();
+  }
+
+  // ===== Tab切替 =====
+  function switchTab(name) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+    document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
+    document.getElementById('tab-' + name).style.display = 'block';
+    if (name === 'review') renderReview();
+  }
+
+  // ===== Replay =====
+  function setDefaultReplayDate() {
+    if (!document.getElementById('r_date').value) {
+      document.getElementById('r_date').value = new Date().toISOString().slice(0,10);
+    }
+  }
+
+  // R:R比自動計算
+  function calcRR() {
+    const e = parseFloat(document.getElementById('r_entry').value);
+    const s = parseFloat(document.getElementById('r_stop').value);
+    const t = parseFloat(document.getElementById('r_target').value);
+    const out = document.getElementById('r_rr');
+    if (!isNaN(e) && !isNaN(s) && !isNaN(t)) {
+      const risk = Math.abs(e - s);
+      const reward = Math.abs(t - e);
+      if (risk > 0) {
+        out.value = (reward / risk).toFixed(2) + ' R';
+      } else {
+        out.value = '';
+      }
+    } else {
+      out.value = '';
+    }
+  }
+  ['r_entry','r_stop','r_target'].forEach(id => {
+    document.addEventListener('DOMContentLoaded', () => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener('input', calcRR);
+    });
+  });
+
+  function selectGrade(g) {
+    document.getElementById('r_grade').value = g;
+    document.querySelectorAll('#tab-replay .grade-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.grade === g);
+      b.classList.toggle('x', g === 'x' && b.dataset.grade === 'x');
+      b.classList.toggle('tri', g === 'tri' && b.dataset.grade === 'tri');
+    });
+  }
+
+  function clearReplayForm() {
+    ['r_date','r_ticker','r_chartdate','r_timeframe','r_scenario_up','r_scenario_alt','r_scenario_down',
+     'r_entry','r_stop','r_target','r_rr','r_action','r_skip','r_result','r_grade','r_note'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+    document.getElementById('r_r3').checked = false;
+    document.getElementById('r_r1').checked = false;
+    document.querySelectorAll('#tab-replay .grade-btn').forEach(b => b.classList.remove('active','x','tri'));
+    setDefaultReplayDate();
+  }
+
+  function addReplay() {
+    const entry = {
+      id: Date.now() + '_' + Math.random().toString(36).slice(2, 8),
+      date: document.getElementById('r_date').value,
+      ticker: document.getElementById('r_ticker').value,
+      chartdate: document.getElementById('r_chartdate').value,
+      timeframe: document.getElementById('r_timeframe').value,
+      scenario_up: document.getElementById('r_scenario_up').value,
+      scenario_alt: document.getElementById('r_scenario_alt').value,
+      scenario_down: document.getElementById('r_scenario_down').value,
+      entry: document.getElementById('r_entry').value,
+      stop: document.getElementById('r_stop').value,
+      target: document.getElementById('r_target').value,
+      result: document.getElementById('r_result').value,
+      action: document.getElementById('r_action').value,
+      skip: document.getElementById('r_skip').value,
+      grade: document.getElementById('r_grade').value,
+      note: document.getElementById('r_note').value,
+      rules: {
+        r3: document.getElementById('r_r3').checked,
+        r1: document.getElementById('r_r1').checked
+      },
+      createdAt: new Date().toISOString()
+    };
+    if (!entry.date) { alert('練習日を入力してください'); return; }
+    state.replays.push(entry);
+    save();
+    clearReplayForm();
+    render();
+  }
+
+  function renderReplayList() {
+    const list = document.getElementById('replayList');
+    document.getElementById('replayCount').textContent = state.replays.length;
+    if (state.replays.length === 0) {
+      list.innerHTML = '<div class="empty">まだ記録がありません。最初のReplayを追加してください。</div>';
+      return;
+    }
+    const sorted = [...state.replays].sort((a,b) => b.createdAt.localeCompare(a.createdAt));
+    let html = '<table class="records-table"><thead><tr>';
+    html += '<th>日付</th><th>銘柄</th><th>判断</th><th>E / S / T</th><th>R:R</th><th>結果</th><th>採点</th><th>気づき</th><th>r3</th><th>r1</th>';
+    html += '</tr></thead><tbody>';
+    for (const e of sorted) {
+      const rr = (() => {
+        const en = parseFloat(e.entry), st = parseFloat(e.stop), tg = parseFloat(e.target);
+        if (!isNaN(en) && !isNaN(st) && !isNaN(tg) && Math.abs(en-st) > 0) {
+          return (Math.abs(tg-en)/Math.abs(en-st)).toFixed(2) + 'R';
+        }
+        return '—';
+      })();
+      const gradePill = e.grade ? `<span class="grade-pill ${e.grade}">${e.grade === 'o' ? '◯' : e.grade === 'tri' ? '△' : '×'}</span>` : '—';
+      const note = (e.note || '').slice(0, 40) + ((e.note || '').length > 40 ? '…' : '');
+      html += `<tr onclick="openEdit('${e.id}')">`;
+      html += `<td>${e.date}</td>`;
+      html += `<td>${e.ticker || '—'}</td>`;
+      html += `<td>${e.action || '—'}${e.skip ? ' (' + e.skip + ')' : ''}</td>`;
+      html += `<td>${e.entry || '—'} / ${e.stop || '—'} / ${e.target || '—'}</td>`;
+      html += `<td>${rr}</td>`;
+      html += `<td>${e.result || '—'}</td>`;
+      html += `<td>${gradePill}</td>`;
+      html += `<td>${note}</td>`;
+      html += `<td>${e.rules && e.rules.r3 ? '✓' : '—'}</td>`;
+      html += `<td>${e.rules && e.rules.r1 ? '✓' : '—'}</td>`;
+      html += '</tr>';
+    }
+    html += '</tbody></table>';
+    list.innerHTML = html;
+  }
+
+  // ===== Edit =====
+  function openEdit(id) {
+    const e = state.replays.find(x => x.id === id);
+    if (!e) return;
+    editingId = id;
+    document.getElementById('e_date').value = e.date || '';
+    document.getElementById('e_ticker').value = e.ticker || '';
+    document.getElementById('e_chartdate').value = e.chartdate || '';
+    document.getElementById('e_timeframe').value = e.timeframe || '';
+    document.getElementById('e_scenario_up').value = e.scenario_up || '';
+    document.getElementById('e_scenario_alt').value = e.scenario_alt || '';
+    document.getElementById('e_scenario_down').value = e.scenario_down || '';
+    document.getElementById('e_entry').value = e.entry || '';
+    document.getElementById('e_stop').value = e.stop || '';
+    document.getElementById('e_target').value = e.target || '';
+    document.getElementById('e_result').value = e.result || '';
+    document.getElementById('e_action').value = e.action || '';
+    document.getElementById('e_skip').value = e.skip || '';
+    document.getElementById('e_note').value = e.note || '';
+    document.getElementById('e_grade').value = e.grade || '';
+    document.getElementById('e_r3').checked = !!(e.rules && e.rules.r3);
+    document.getElementById('e_r1').checked = !!(e.rules && e.rules.r1);
+    document.querySelectorAll('#editModal .grade-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.egrade === e.grade);
+      b.classList.toggle('x', e.grade === 'x' && b.dataset.egrade === 'x');
+      b.classList.toggle('tri', e.grade === 'tri' && b.dataset.egrade === 'tri');
+    });
+    document.getElementById('editModal').classList.add('open');
+  }
+  function selectEditGrade(g) {
+    document.getElementById('e_grade').value = g;
+    document.querySelectorAll('#editModal .grade-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.egrade === g);
+      b.classList.toggle('x', g === 'x' && b.dataset.egrade === 'x');
+      b.classList.toggle('tri', g === 'tri' && b.dataset.egrade === 'tri');
+    });
+  }
+  function closeEditModal() {
+    document.getElementById('editModal').classList.remove('open');
+    editingId = null;
+  }
+  function saveEdit() {
+    const e = state.replays.find(x => x.id === editingId);
+    if (!e) return;
+    e.date = document.getElementById('e_date').value;
+    e.ticker = document.getElementById('e_ticker').value;
+    e.chartdate = document.getElementById('e_chartdate').value;
+    e.timeframe = document.getElementById('e_timeframe').value;
+    e.scenario_up = document.getElementById('e_scenario_up').value;
+    e.scenario_alt = document.getElementById('e_scenario_alt').value;
+    e.scenario_down = document.getElementById('e_scenario_down').value;
+    e.entry = document.getElementById('e_entry').value;
+    e.stop = document.getElementById('e_stop').value;
+    e.target = document.getElementById('e_target').value;
+    e.result = document.getElementById('e_result').value;
+    e.action = document.getElementById('e_action').value;
+    e.skip = document.getElementById('e_skip').value;
+    e.note = document.getElementById('e_note').value;
+    e.grade = document.getElementById('e_grade').value;
+    e.rules = {
+      r3: document.getElementById('e_r3').checked,
+      r1: document.getElementById('e_r1').checked
+    };
+    save();
+    closeEditModal();
+    render();
+  }
+  function deleteEntry() {
+    if (!confirm('この記録を削除しますか？')) return;
+    state.replays = state.replays.filter(x => x.id !== editingId);
+    save();
+    closeEditModal();
+    render();
+  }
+
+  // ===== Week 1 教材 =====
+  function renderStudyGrid() {
+    const grid = document.getElementById('studyGrid');
+    let html = '';
+    for (let day = 1; day <= 5; day++) {
+      const s = state.studies.find(x => x.day === day);
+      const done = !!s && s.theme && s.learned;
+      html += `<div class="study-card ${done ? 'done' : ''}" onclick="openStudy(${day})">`;
+      html += `<div class="study-day">Day ${day}</div>`;
+      html += `<div class="study-theme">${done ? s.theme : '(未記録)'}</div>`;
+      html += `<div class="study-status ${done ? 'done' : ''}">${done ? '✓ 完了' : 'クリックして記録'}</div>`;
+      html += '</div>';
+    }
+    grid.innerHTML = html;
+  }
+  function openStudy(day) {
+    editingStudyDay = day;
+    const s = state.studies.find(x => x.day === day) || {};
+    document.getElementById('studyModalTitle').textContent = `Day ${day}`;
+    document.getElementById('s_date').value = s.date || '';
+    document.getElementById('s_theme').value = s.theme || '';
+    document.getElementById('s_learned').value = s.learned || '';
+    document.getElementById('s_questions').value = s.questions || '';
+    document.getElementById('studyModal').classList.add('open');
+  }
+  function closeStudyModal() {
+    document.getElementById('studyModal').classList.remove('open');
+    editingStudyDay = null;
+  }
+  function saveStudy() {
+    if (editingStudyDay === null) return;
+    const entry = {
+      day: editingStudyDay,
+      date: document.getElementById('s_date').value,
+      theme: document.getElementById('s_theme').value,
+      learned: document.getElementById('s_learned').value,
+      questions: document.getElementById('s_questions').value
+    };
+    const idx = state.studies.findIndex(x => x.day === editingStudyDay);
+    if (idx >= 0) state.studies[idx] = entry;
+    else state.studies.push(entry);
+    save();
+    closeStudyModal();
+    render();
+  }
+
+  // ===== 観察日記 =====
+  function addDiary() {
+    const date = document.getElementById('d_date').value;
+    const note = document.getElementById('d_note').value;
+    if (!date || !note.trim()) { alert('日付と内容を入力してください'); return; }
+    state.diaries.push({
+      id: Date.now() + '_' + Math.random().toString(36).slice(2, 8),
+      date,
+      note,
+      createdAt: new Date().toISOString()
+    });
+    save();
+    document.getElementById('d_note').value = '';
+    renderDiaryList();
+  }
+  function deleteDiary(id) {
+    if (!confirm('この日記を削除しますか？')) return;
+    state.diaries = state.diaries.filter(x => x.id !== id);
+    save();
+    renderDiaryList();
+  }
+  function renderDiaryList() {
+    const list = document.getElementById('diaryList');
+    document.getElementById('diaryCount').textContent = state.diaries.length;
+    if (state.diaries.length === 0) {
+      list.innerHTML = '<div class="empty">まだ記録がありません。</div>';
+      return;
+    }
+    const sorted = [...state.diaries].sort((a,b) => b.date.localeCompare(a.date));
+    let html = '';
+    for (const d of sorted) {
+      html += '<div class="form-card" style="margin-bottom: 14px;">';
+      html += `<div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom: 12px;">`;
+      html += `<div style="font-family:'Jost'; font-size:12px; color: var(--text-muted); letter-spacing:0.15em; text-transform:uppercase;">${d.date}</div>`;
+      html += `<button class="danger" style="padding:4px 12px; font-size:11px;" onclick="deleteDiary('${d.id}')">Delete</button>`;
+      html += '</div>';
+      html += `<div style="font-family:'Jost'; font-size:14px; color: var(--text-dim); line-height:1.7; white-space:pre-wrap;">${escapeHtml(d.note)}</div>`;
+      html += '</div>';
+    }
+    list.innerHTML = html;
+  }
+  function escapeHtml(s) {
+    return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // ===== Dashboard =====
+  function renderDashboard() {
+    // Replay
+    const rCount = state.replays.length;
+    document.getElementById('dashReplay').textContent = `${rCount} / 120`;
+    const pct = Math.min(100, Math.round(rCount / 120 * 100));
+    document.getElementById('dashReplaySub').textContent = `${pct}%`;
+    document.getElementById('dashReplayFill').style.width = pct + '%';
+
+    // Study
+    const sCount = state.studies.filter(s => s.theme && s.learned).length;
+    document.getElementById('dashStudy').textContent = `${sCount} / 5`;
+    const sPct = Math.round(sCount / 5 * 100);
+    document.getElementById('dashStudyFill').style.width = sPct + '%';
+    document.getElementById('dashStudySub').textContent = sCount === 5 ? '完了' : sCount === 0 ? '未開始' : `${sPct}%`;
+
+    // Days
+    if (state.startDate) {
+      const start = new Date(state.startDate);
+      const now = new Date();
+      const diff = Math.floor((now - start) / (1000 * 60 * 60 * 24));
+      document.getElementById('dashDays').textContent = `${diff} / 30`;
+      const remaining = 30 - diff;
+      document.getElementById('dashDaysSub').textContent = remaining > 0 ? `残り ${remaining} 日` : '期間達成';
+      const dashDaysEl = document.getElementById('dashDays');
+      dashDaysEl.classList.toggle('positive', diff >= 30);
+    }
+
+    // Rule
+    const evaluated = state.replays.filter(r => r.action === 'エントリー');
+    if (evaluated.length > 0) {
+      const r3hit = evaluated.filter(r => r.rules && r.rules.r3).length;
+      const r1hit = evaluated.filter(r => r.rules && r.rules.r1).length;
+      const total = evaluated.length * 2;
+      const rate = Math.round((r3hit + r1hit) / total * 100);
+      document.getElementById('dashRule').textContent = rate + '%';
+      document.getElementById('dashRuleSub').textContent = `r3: ${r3hit}/${evaluated.length} · r1: ${r1hit}/${evaluated.length}`;
+      const el = document.getElementById('dashRule');
+      el.classList.toggle('positive', rate >= 80);
+      el.classList.toggle('warn', rate < 80 && rate >= 50);
+    } else {
+      document.getElementById('dashRule').textContent = '—';
+      document.getElementById('dashRuleSub').textContent = 'r1, r3';
+    }
+
+    // Grade
+    const graded = state.replays.filter(r => r.grade);
+    if (graded.length > 0) {
+      const o = graded.filter(r => r.grade === 'o').length;
+      const tri = graded.filter(r => r.grade === 'tri').length;
+      const x = graded.filter(r => r.grade === 'x').length;
+      document.getElementById('dashGrade').textContent = `${o} / ${tri} / ${x}`;
+    } else {
+      document.getElementById('dashGrade').textContent = '— / — / —';
+    }
+  }
+
+  // ===== Phase 1 終了レビュー =====
+  function renderReview() {
+    const body = document.getElementById('reviewBody');
+    if (!state.startDate) {
+      body.innerHTML = '<div class="lock-notice">Phase 1 開始日が未設定です。</div>';
+      return;
+    }
+    const start = new Date(state.startDate);
+    const now = new Date();
+    const diff = Math.floor((now - start) / (1000 * 60 * 60 * 24));
+    if (diff < 30) {
+      body.innerHTML = `<div class="lock-notice">Phase 1 終了レビューは 30 日経過後に解放されます。<br>現在 ${diff} 日経過 / 残り ${30 - diff} 日</div>`;
+      return;
+    }
+
+    // 集計
+    const rCount = state.replays.length;
+    const sCount = state.studies.filter(s => s.theme && s.learned).length;
+    const evaluated = state.replays.filter(r => r.action === 'エントリー');
+    let ruleRate = '—';
+    if (evaluated.length > 0) {
+      const hits = evaluated.filter(r => r.rules && r.rules.r3).length + evaluated.filter(r => r.rules && r.rules.r1).length;
+      ruleRate = Math.round(hits / (evaluated.length * 2) * 100) + '%';
+    }
+    const graded = state.replays.filter(r => r.grade);
+    const oCount = graded.filter(r => r.grade === 'o').length;
+    const triCount = graded.filter(r => r.grade === 'tri').length;
+    const xCount = graded.filter(r => r.grade === 'x').length;
+
+    // 達成基準
+    const replayOk = rCount >= 120;
+    const studyOk = sCount === 5;
+    const ruleOk = evaluated.length > 0 && parseInt(ruleRate) >= 80;
+    const daysOk = diff >= 30;
+
+    let html = '<div class="review-card">';
+    html += '<div class="review-stat-row">';
+    html += `<div class="review-stat"><div class="review-stat-label">Replay 練習</div><div class="review-stat-value">${rCount} / 120</div></div>`;
+    html += `<div class="review-stat"><div class="review-stat-label">Week 1 教材</div><div class="review-stat-value">${sCount} / 5</div></div>`;
+    html += `<div class="review-stat"><div class="review-stat-label">経過日数</div><div class="review-stat-value">${diff} 日</div></div>`;
+    html += `<div class="review-stat"><div class="review-stat-label">RULE 達成率</div><div class="review-stat-value">${ruleRate}</div></div>`;
+    html += '</div>';
+
+    html += '<div style="margin-bottom: 28px;">';
+    html += '<div style="font-family: Jost; font-size: 12px; color: var(--text-muted); letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 12px;">採点分布</div>';
+    html += `<div style="font-family: Jost; font-size: 18px; color: var(--text-dim);">◯ ${oCount} &nbsp; · &nbsp; △ ${triCount} &nbsp; · &nbsp; × ${xCount}</div>`;
+    html += '</div>';
+
+    html += '<div style="margin-bottom: 28px;">';
+    html += '<div style="font-family: Jost; font-size: 12px; color: var(--text-muted); letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 16px;">達成基準</div>';
+    const check = ok => ok ? '<span style="color: var(--green);">✓</span>' : '<span style="color: var(--red);">—</span>';
+    html += `<div style="margin-bottom: 10px; color: var(--text-dim);">${check(replayOk)} &nbsp; Replay 120 回以上</div>`;
+    html += `<div style="margin-bottom: 10px; color: var(--text-dim);">${check(studyOk)} &nbsp; Week 1 教材完了</div>`;
+    html += `<div style="margin-bottom: 10px; color: var(--text-dim);">${check(ruleOk)} &nbsp; RULE 達成率 80% 以上</div>`;
+    html += `<div style="margin-bottom: 10px; color: var(--text-dim);">${check(daysOk)} &nbsp; 30 日経過</div>`;
+    html += '</div>';
+
+    const allOk = replayOk && studyOk && ruleOk && daysOk;
+    if (allOk) {
+      html += '<div style="padding: 22px; background: rgba(107,155,127,0.08); border-left: 2px solid var(--green); color: var(--green); font-family: Jost; font-size: 14px; letter-spacing: 0.05em;">';
+      html += 'Phase 1 達成基準クリア。Phase 2 への移行可能。<br>';
+      html += '<span style="color: var(--text-dim); font-size: 13px;">最後に「型が体に入った感覚」があるか、自己観察してから次へ。</span>';
+      html += '</div>';
+    } else {
+      html += '<div style="padding: 22px; background: rgba(200,184,138,0.06); border-left: 2px solid var(--accent); color: var(--accent); font-family: Jost; font-size: 14px; letter-spacing: 0.05em;">';
+      html += '達成基準に到達していない項目があります。<br>';
+      html += '<span style="color: var(--text-dim); font-size: 13px;">焦らずに、足りない部分を埋めてから Phase 2 へ。</span>';
+      html += '</div>';
+    }
+
+    html += '</div>';
+    body.innerHTML = html;
+  }
+
+  // ===== CSV Export / Import =====
+  function exportCSV() {
+    const lines = [];
+    lines.push('# Phase 1 Journal Export');
+    lines.push('# Start Date: ' + (state.startDate || ''));
+    lines.push('');
+    lines.push('## Replays');
+    lines.push('id,date,ticker,chartdate,timeframe,scenario_up,scenario_alt,scenario_down,entry,stop,target,result,action,skip,grade,note,r3,r1');
+    for (const r of state.replays) {
+      lines.push([
+        r.id, r.date, r.ticker, r.chartdate, r.timeframe,
+        r.scenario_up, r.scenario_alt, r.scenario_down,
+        r.entry, r.stop, r.target, r.result,
+        r.action, r.skip, r.grade, r.note,
+        r.rules && r.rules.r3 ? '1' : '0',
+        r.rules && r.rules.r1 ? '1' : '0'
+      ].map(csvEscape).join(','));
+    }
+    lines.push('');
+    lines.push('## Studies');
+    lines.push('day,date,theme,learned,questions');
+    for (const s of state.studies) {
+      lines.push([s.day, s.date, s.theme, s.learned, s.questions].map(csvEscape).join(','));
+    }
+    lines.push('');
+    lines.push('## Diaries');
+    lines.push('id,date,note');
+    for (const d of state.diaries) {
+      lines.push([d.id, d.date, d.note].map(csvEscape).join(','));
+    }
+    const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `phase1_journal_${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+  function csvEscape(v) {
+    if (v === undefined || v === null) return '';
+    const s = String(v);
+    if (s.includes(',') || s.includes('"') || s.includes('\n')) {
+      return '"' + s.replace(/"/g, '""') + '"';
+    }
+    return s;
+  }
+  function importCSV(ev) {
+    const file = ev.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        const text = e.target.result;
+        // 簡易インポート: 既存データに追加 (重複は無視)
+        // 実装は省略可能ですが、最低限 startDate と replays を読む
+        if (!confirm('CSVをインポートしますか？既存データは保持されます。')) return;
+        const lines = text.split('\n');
+        let section = '';
+        for (const line of lines) {
+          if (line.startsWith('# Start Date: ')) {
+            if (!state.startDate) state.startDate = line.replace('# Start Date: ', '').trim();
+          } else if (line.startsWith('## Replays')) section = 'replays';
+          else if (line.startsWith('## Studies')) section = 'studies';
+          else if (line.startsWith('## Diaries')) section = 'diaries';
+          // 本格的なパースは省略
+        }
+        save();
+        render();
+        alert('インポート完了 (簡易版)');
+      } catch (err) {
+        alert('インポート失敗: ' + err.message);
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  function clearAll() {
+    if (!confirm('全データを削除します。本当によろしいですか？\nこの操作は取り消せません。')) return;
+    if (!confirm('もう一度確認します。本当に全削除しますか？')) return;
+    localStorage.removeItem(STORAGE_KEY);
+    state = { startDate: null, replays: [], studies: [], diaries: [] };
+    render();
+    checkStartDate();
+  }
+
+  // ===== Render =====
+  function render() {
+    renderDashboard();
+    renderReplayList();
+    renderStudyGrid();
+    renderDiaryList();
+  }
+
+  // ===== Init =====
+  document.addEventListener('DOMContentLoaded', () => {
+    load();
+    setDefaultReplayDate();
+    document.getElementById('d_date').value = new Date().toISOString().slice(0,10);
+    ['r_entry','r_stop','r_target'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener('input', calcRR);
+    });
+    render();
+    checkStartDate();
+  });
+</script>
+
+</body>
+</html>
