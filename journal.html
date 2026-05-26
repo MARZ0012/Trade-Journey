@@ -1,0 +1,2825 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trade Journal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jost:wght@200;300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  :root {
+    --bg: #0a0a0a; --surface: #121212; --border: #1f1f1f; --border-light: #2a2a2a;
+    --text: #e8e6e1; --text-dim: #c8c6c2; --text-muted: #9a9896;
+    --accent: #c8b88a; --primary: #e07840; --green: #6b9b7f; --red: #b86b6b;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--bg); color: var(--text); font-family: 'Jost', -apple-system, sans-serif; font-weight: 300; letter-spacing: 0.01em; -webkit-font-smoothing: antialiased; min-height: 100vh; }
+  body { padding: 60px 40px; max-width: 1800px; margin: 0 auto; }
+  header { display: flex; justify-content: space-between; align-items: flex-end; padding-bottom: 40px; border-bottom: 1px solid var(--border); margin-bottom: 60px; }
+  .title-block h1 { font-family: 'Jost', sans-serif; font-weight: 200; font-size: 42px; letter-spacing: 0.15em; text-transform: uppercase; line-height: 1; margin-bottom: 10px; }
+  .title-block .subtitle { font-family: 'Jost', sans-serif; font-size: 13px; color: var(--text-muted); letter-spacing: 0.2em; text-transform: uppercase; }
+  .header-actions { display: flex; gap: 12px; }
+  button { background: transparent; color: var(--text-dim); border: 1px solid var(--border-light); padding: 10px 20px; font-family: 'Jost', sans-serif; font-size: 13px; letter-spacing: 0.15em; text-transform: uppercase; cursor: pointer; transition: all 0.3s ease; }
+  button:hover { color: var(--text); border-color: var(--accent); }
+  button.primary { background: var(--primary); color: var(--bg); border-color: var(--primary); }
+  button.primary:hover { background: transparent; color: var(--primary); }
+  button.danger:hover { color: var(--red); border-color: var(--red); }
+  .stats { display: grid; grid-template-columns: 1.8fr 1fr 1fr 1fr 1fr 1fr; margin-bottom: 60px; border: 1px solid var(--border); }
+  .stat { padding: 32px 28px; border-right: 1px solid var(--border); }
+  .stat:last-child { border-right: none; }
+  .stat-label { font-family: 'Jost', sans-serif; font-size: 13px; color: var(--text-muted); letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 12px; }
+  .stat-value { font-family: 'Jost', sans-serif; font-size: 30px; font-weight: 300; letter-spacing: 0.02em; line-height: 1; }
+  .stat-value.positive { color: var(--green); }
+  .stat-value.negative { color: var(--red); }
+  .stat-value.warn { color: var(--accent); }
+  .stat-sub { font-family: 'Jost', sans-serif; font-size: 14px; color: var(--text-muted); margin-top: 8px; letter-spacing: 0.04em; }
+  .stat-sub.warn { color: var(--accent); }
+
+  /* Monthly Goals banner */
+  /* Lessons (自分への言葉、目標と教訓の集約) */
+  .lessons-display { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
+  .lesson-item { padding: 12px 18px; border: 1px solid var(--border); background: var(--surface); font-family: 'Jost', sans-serif; font-size: 14px; color: var(--text-dim); line-height: 1.6; letter-spacing: 0.02em; position: relative; display: flex; align-items: flex-start; gap: 10px; }
+  .lesson-item.pinned { border-color: rgba(200,184,138,0.4); background: rgba(200,184,138,0.04); }
+  .lesson-pin-mark { color: var(--accent); font-size: 12px; flex-shrink: 0; line-height: 1.6; }
+  .lesson-text { flex: 1; }
+  .lessons-empty { padding: 28px 18px; border: 1px dashed var(--border-light); color: var(--text-muted); font-family: 'Jost', sans-serif; font-size: 13px; font-style: italic; text-align: center; letter-spacing: 0.05em; }
+  .lessons-actions { display: flex; gap: 10px; margin-bottom: 8px; }
+  .lessons-btn { background: transparent; color: var(--text-muted); border: 1px solid var(--border-light); padding: 6px 14px; font-family: 'Jost', sans-serif; font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase; cursor: pointer; transition: all 0.2s; }
+  .lessons-btn:hover { color: var(--accent); border-color: var(--accent); }
+  .lessons-manage { margin-top: 18px; padding: 20px 24px; border: 1px solid var(--border); background: var(--surface); }
+  .lessons-manage-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+  .lessons-manage-title { font-family: 'Jost', sans-serif; font-size: 12px; color: var(--text-muted); letter-spacing: 0.2em; text-transform: uppercase; }
+  .lesson-add-row { display: flex; gap: 12px; align-items: center; margin-bottom: 16px; }
+  .lesson-add-input { flex: 1; background: transparent; border: none; border-bottom: 1px solid var(--border-light); color: var(--text); font-family: 'Jost', sans-serif; font-size: 13px; padding: 8px 0; outline: none; }
+  .lesson-add-input:focus { border-bottom-color: var(--accent); }
+  .lesson-add-pin { display: flex; align-items: center; gap: 6px; color: var(--text-muted); font-family: 'Jost', sans-serif; font-size: 11px; letter-spacing: 0.1em; cursor: pointer; user-select: none; }
+  .lesson-add-pin input { width: 14px; height: 14px; cursor: pointer; }
+  .lessons-list { display: flex; flex-direction: column; gap: 8px; }
+  .lessons-list-item { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border-bottom: 1px solid var(--border); }
+  .lessons-list-item:last-child { border-bottom: none; }
+  .lessons-list-text { flex: 1; font-family: 'Jost', sans-serif; font-size: 13px; color: var(--text-dim); line-height: 1.6; }
+  .lessons-list-text.pinned { color: var(--text); }
+  .lesson-list-actions { display: flex; gap: 6px; flex-shrink: 0; }
+  .lesson-list-actions button { background: transparent; border: none; color: var(--text-muted); cursor: pointer; font-size: 13px; padding: 4px 8px; }
+  .lesson-list-actions button:hover { color: var(--accent); }
+  .lesson-list-actions button.delete:hover { color: var(--red); }
+  .lesson-list-actions button.pin.active { color: var(--accent); }
+  /* monthly-goals-btn は newMonthBanner で使われてるので残す */
+  .monthly-goals-btn { background: transparent; color: var(--text-muted); border: 1px solid var(--border-light); padding: 4px 10px; font-family: 'Jost', sans-serif; font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase; cursor: pointer; }
+  .monthly-goals-btn:hover { color: var(--accent); border-color: var(--accent); }
+  /* Hero — Rule Adherence */
+  .stat.hero { padding: 32px 32px; background: linear-gradient(135deg, rgba(200,184,138,0.06), transparent 70%); }
+  .stat.hero .stat-label { font-size: 13px; color: var(--accent); margin-bottom: 14px; }
+  .stat.hero .stat-value.hero-value { font-size: 56px; font-weight: 200; letter-spacing: 0.01em; color: var(--accent); line-height: 1; }
+  .stat.hero .stat-value.hero-value.low { color: var(--red); }
+  .stat.hero .stat-value.hero-value.high { color: var(--green); }
+  .stat.hero .hero-meta { font-size: 14px; color: var(--text-muted); letter-spacing: 0.08em; text-transform: uppercase; margin-top: 6px; }
+  .hero-split { display: grid; grid-template-columns: 1fr 1fr; gap: 0; margin-top: 20px; border-top: 1px solid var(--border); padding-top: 16px; }
+  .hero-split-item { display: flex; flex-direction: column; gap: 4px; }
+  .hero-split-item + .hero-split-item { padding-left: 16px; border-left: 1px solid var(--border); }
+  .hero-split-label { font-size: 13px; color: var(--text-muted); letter-spacing: 0.15em; text-transform: uppercase; }
+  .hero-split-value { font-family: 'Jost', sans-serif; font-size: 22px; font-weight: 300; color: var(--text-dim); }
+  .hero-split-sub { font-size: 13px; color: var(--text-muted); letter-spacing: 0.04em; }
+  .hero-window { display: flex; gap: 18px; margin-top: 14px; font-size: 14px; color: var(--text-muted); letter-spacing: 0.06em; text-transform: uppercase; }
+  .hero-window span strong { color: var(--text-dim); font-weight: 400; margin-left: 4px; }
+  /* Rule checklist */
+  .checklist { grid-column: span 6; border-top: 1px solid var(--border); padding-top: 24px; margin-top: 8px; }
+  .checklist-header { display: flex; align-items: baseline; gap: 16px; margin-bottom: 16px; }
+  .checklist-label { font-family: 'Jost', sans-serif; font-size: 13px; color: var(--text-muted); letter-spacing: 0.2em; text-transform: uppercase; }
+  .checklist-group-label { font-family: 'Jost', sans-serif; font-size: 10px; color: var(--accent); letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 12px; }
+  .checklist-section { margin-bottom: 20px; }
+  .checklist-section:last-child { margin-bottom: 0; }
+  .checklist-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px 32px; }
+  .check-item { display: flex; align-items: flex-start; gap: 12px; cursor: pointer; padding: 4px 0; user-select: none; transition: opacity 0.2s; }
+  .check-item.disabled { opacity: 0.35; cursor: not-allowed; }
+  .check-item input[type="checkbox"] { appearance: none; width: 18px; height: 18px; border: 1px solid var(--border-light); background: transparent; cursor: pointer; flex-shrink: 0; margin-top: 1px; position: relative; transition: all 0.2s; }
+  .check-item input[type="checkbox"]:hover { border-color: var(--accent); }
+  .check-item input[type="checkbox"]:checked { background: var(--accent); border-color: var(--accent); }
+  .check-item input[type="checkbox"]:checked::after { content: "✓"; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: var(--bg); font-size: 12px; font-weight: 700; }
+  .check-item.disabled input[type="checkbox"] { cursor: not-allowed; }
+  .check-text { font-size: 13px; color: var(--text-dim); font-weight: 300; line-height: 1.4; }
+  .check-item input[type="checkbox"]:checked ~ .check-text { color: var(--text); }
+  /* Rule cell */
+  .rule-cell { font-family: 'Jost', sans-serif; font-size: 13px; letter-spacing: 0.03em; position: relative; cursor: help; }
+  .rule-cell.full { color: var(--green); }
+  .rule-cell.high { color: var(--accent); }
+  .rule-cell.mid { color: var(--text-dim); }
+  .rule-cell.low { color: var(--red); }
+  .rule-cell.na { color: var(--text-muted); font-style: italic; }
+  .rule-tooltip { position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); background: var(--surface); border: 1px solid var(--border-light); padding: 12px 14px; min-width: 260px; font-family: 'Jost', sans-serif; font-size: 11px; font-weight: 300; color: var(--text-dim); letter-spacing: 0.02em; line-height: 1.5; opacity: 0; pointer-events: none; transition: opacity 0.2s; z-index: 10; text-transform: none; text-align: left; }
+  .rule-cell:hover .rule-tooltip { opacity: 1; }
+  .rule-tooltip-row { display: flex; align-items: center; gap: 8px; padding: 2px 0; }
+  .rule-tooltip-row.checked { color: var(--text); }
+  .rule-tooltip-row.unchecked { color: var(--text-muted); }
+  .rule-tooltip-row.na { color: var(--text-muted); font-style: italic; }
+  .rule-tooltip-mark { font-size: 10px; width: 12px; flex-shrink: 0; }
+  .rule-tooltip-group { font-size: 9px; color: var(--accent); letter-spacing: 0.15em; text-transform: uppercase; margin: 6px 0 4px; }
+  .rule-tooltip-group:first-child { margin-top: 0; }
+  .section { margin-bottom: 60px; }
+
+  /* New Entry セクション: 左にオレンジの縦ラインで主役感を出す */
+  .new-entry-section { position: relative; padding-left: 28px; }
+  .new-entry-section::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: var(--primary);
+  }
+  .new-entry-section .section-title { color: var(--text); }
+
+  /* Watchlistから取り込み待ちバナー */
+  .pending-import-banner { border: 1px solid rgba(200, 184, 138, 0.4); background: rgba(200, 184, 138, 0.05); padding: 18px 24px; margin-bottom: 24px; }
+  .pending-import-inner { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+  .pending-import-label { font-family: 'Jost', sans-serif; font-size: 10px; color: var(--accent); letter-spacing: 0.2em; text-transform: uppercase; }
+  .pending-import-target { flex: 1; font-family: 'Jost', sans-serif; font-size: 14px; color: var(--text); font-weight: 400; min-width: 200px; }
+  .pending-import-actions { display: flex; gap: 10px; }
+  .section-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+  .section-title { font-family: 'Jost', sans-serif; font-size: 18px; font-weight: 400; letter-spacing: 0.2em; text-transform: uppercase; }
+  .section-meta { font-family: 'Jost', sans-serif; font-size: 10px; color: var(--text-muted); letter-spacing: 0.2em; text-transform: uppercase; }
+  .form-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 16px; margin-bottom: 20px; }
+  .field { display: flex; flex-direction: column; }
+  .field-full { grid-column: span 6; }
+  .field-third { grid-column: span 2; }
+  label { font-family: 'Jost', sans-serif; font-size: 13px; color: var(--text-muted); letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 8px; }
+  input, select, textarea { background: transparent; border: none; border-bottom: 1px solid var(--border-light); color: var(--text); font-family: 'Jost', sans-serif; font-size: 14px; font-weight: 300; padding: 8px 0; outline: none; transition: border-color 0.3s; width: 100%; }
+  input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+  select { appearance: none; background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path d='M1 1l4 4 4-4' stroke='%238a8783' stroke-width='1' fill='none'/></svg>"); background-repeat: no-repeat; background-position: right center; padding-right: 20px; cursor: pointer; }
+  select option { background: var(--surface); color: var(--text); }
+  textarea { resize: vertical; min-height: 90px; font-family: 'Jost', sans-serif; line-height: 1.6; }
+  .form-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; }
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead th { font-family: 'Jost', sans-serif; font-size: 13px; color: var(--text-muted); letter-spacing: 0.2em; text-transform: uppercase; text-align: left; padding: 16px 12px; border-bottom: 1px solid var(--border); font-weight: 400; }
+  thead th.num { text-align: right; }
+  tbody tr { border-bottom: 1px solid var(--border); transition: background 0.2s; }
+  tbody tr:hover { background: var(--surface); }
+  tbody td { padding: 18px 12px; color: var(--text); font-weight: 300; }
+  tbody td.num { text-align: right; font-family: 'Jost', sans-serif; font-size: 13px; }
+  .badge { display: inline-block; font-family: 'Jost', sans-serif; font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase; padding: 4px 8px; border: 1px solid var(--border-light); color: var(--text-dim); }
+  .badge.buy { color: var(--green); border-color: rgba(107, 155, 127, 0.3); }
+  .badge.sell { color: var(--red); border-color: rgba(184, 107, 107, 0.3); }
+  .badge.holding { color: var(--accent); border-color: rgba(200, 184, 138, 0.3); }
+  .badge.closed { color: #6b8eb8; border-color: rgba(107, 142, 184, 0.35); }
+  .badge.skipped { color: var(--text-muted); border-color: var(--border-light); font-style: italic; }
+  .badge.probe { color: var(--accent); border-color: rgba(200, 184, 138, 0.4); background: rgba(200, 184, 138, 0.05); }
+  .badge.tf { color: var(--text-muted); border-color: var(--border-light); background: transparent; font-variant-numeric: tabular-nums; letter-spacing: 0.08em; }
+  .pnl-positive { color: var(--green); }
+  .pnl-negative { color: var(--red); }
+  .pnl-empty { color: var(--text-muted); }
+  .row-actions { display: flex; gap: 8px; justify-content: flex-end; }
+  .icon-btn { background: transparent; border: none; color: var(--text-muted); cursor: pointer; padding: 4px; font-size: 14px; transition: color 0.2s; }
+  .icon-btn:hover { color: var(--accent); }
+  .icon-btn.delete:hover { color: var(--red); }
+  .empty { text-align: center; padding: 80px 20px; color: var(--text-muted); }
+  .empty-text { font-family: 'Jost', sans-serif; font-size: 16px; font-weight: 200; font-style: italic; letter-spacing: 0.08em; color: var(--text-dim); margin-bottom: 12px; }
+  .empty-sub { font-family: 'Jost', sans-serif; font-size: 10px; color: var(--text-muted); letter-spacing: 0.2em; text-transform: uppercase; }
+  .filters { display: flex; gap: 16px; margin-bottom: 24px; align-items: center; }
+  .filter { display: flex; align-items: center; gap: 8px; }
+  .filter label { margin-bottom: 0; }
+  .filter select { border-bottom: 1px solid var(--border-light); padding: 4px 16px 4px 0; font-size: 12px; }
+  /* Tags input (chip UI) */
+  .tags-input-wrap { position: relative; }
+  .tags-input-box { border-bottom: 1px solid var(--border-light); padding: 6px 0; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; min-height: 36px; cursor: text; transition: border-color 0.3s; }
+  .tags-input-box:focus-within { border-bottom-color: var(--accent); }
+  .tag-chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 8px 3px 10px; border: 1px solid rgba(200,184,138,0.4); background: rgba(200,184,138,0.08); color: var(--accent); font-family: 'Jost', sans-serif; font-size: 11px; letter-spacing: 0.08em; user-select: none; }
+  .tag-chip-remove { color: var(--text-muted); cursor: pointer; font-size: 12px; line-height: 1; transition: color 0.2s; }
+  .tag-chip-remove:hover { color: var(--red); }
+  .tags-input-field { flex: 1; min-width: 100px; background: transparent; border: none; color: var(--text); font-family: 'Jost', sans-serif; font-size: 13px; font-weight: 300; outline: none; padding: 4px 0; }
+  .tag-suggestions { position: absolute; top: 100%; left: 0; right: 0; background: var(--surface); border: 1px solid var(--border-light); max-height: 240px; overflow-y: auto; z-index: 50; display: none; }
+  .tag-suggestions.active { display: block; }
+  .tag-suggest-item { padding: 8px 12px; font-family: 'Jost', sans-serif; font-size: 12px; color: var(--text-dim); cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: 12px; transition: background 0.15s, border-left-color 0.15s; border-left: 2px solid transparent; }
+  .tag-suggest-item:hover, .tag-suggest-item.highlighted { background: rgba(200,184,138,0.08); border-left-color: var(--accent); color: var(--text); }
+  .tag-suggest-count { color: var(--text-muted); font-size: 10px; }
+  .tag-suggest-new { color: var(--accent); font-style: italic; }
+  /* Inline tags in Memo cell */
+  .memo-tags-inline { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+  .memo-tag { color: var(--accent); font-family: 'Jost', sans-serif; font-size: 10px; letter-spacing: 0.05em; }
+  /* Tag stats section */
+  .tag-stats { border: 1px solid var(--border); padding: 20px 24px; }
+  .tag-stats-header { display: grid; grid-template-columns: 1.5fr 60px 70px 100px 90px; gap: 12px; padding-bottom: 10px; border-bottom: 1px solid var(--border); font-family: 'Jost', sans-serif; font-size: 9px; color: var(--text-muted); letter-spacing: 0.2em; text-transform: uppercase; }
+  .tag-stats-row { display: grid; grid-template-columns: 1.5fr 60px 70px 100px 90px; gap: 12px; padding: 10px 0; font-size: 13px; border-bottom: 1px solid var(--border); transition: background 0.15s; cursor: pointer; }
+  .tag-stats-row:last-child { border-bottom: none; }
+  .tag-stats-row:hover { background: var(--surface); }
+  .tag-stats-row .tag-name { color: var(--accent); font-family: 'Jost', sans-serif; }
+  .tag-stats-row .num { text-align: right; font-family: 'Jost', sans-serif; }
+  .tag-stats-row.active { background: rgba(200,184,138,0.05); border-left: 2px solid var(--accent); padding-left: 8px; }
+  .tag-stats-empty { text-align: center; padding: 32px 20px; color: var(--text-muted); font-family: 'Jost', sans-serif; font-size: 12px; font-style: italic; letter-spacing: 0.08em; }
+  .tag-filter-active { display: inline-flex; align-items: center; gap: 8px; margin-left: 8px; padding: 4px 10px; border: 1px solid var(--accent); color: var(--accent); font-family: 'Jost', sans-serif; font-size: 11px; letter-spacing: 0.08em; }
+  .tag-filter-clear { cursor: pointer; color: var(--text-muted); font-size: 14px; line-height: 1; }
+  .tag-filter-clear:hover { color: var(--red); }
+  .memo-cell { max-width: 220px; overflow-x: auto; overflow-y: hidden; color: var(--text-dim); font-size: 12px; scrollbar-width: thin; scrollbar-color: var(--border-light) transparent; }
+  /* Axis chips in Records (inline above memo) */
+  .axis-chips-inline { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 6px; }
+  .axis-chip { display: inline-block; font-family: 'Jost', sans-serif; font-size: 9px; letter-spacing: 0.1em; padding: 2px 6px; border: 1px solid var(--border-light); color: var(--text-dim); background: transparent; }
+  .axis-chip.setup { color: var(--text); border-color: var(--border-light); }
+  .axis-chip.proc-wait { color: var(--green); border-color: rgba(107,155,127,0.4); }
+  .axis-chip.proc-jump { color: var(--red); border-color: rgba(184,107,107,0.4); }
+  .axis-chip.emo-flat { color: var(--text-dim); border-color: var(--border-light); }
+  .axis-chip.emo-fear { color: #8eb8b8; border-color: rgba(142,184,184,0.4); }
+  .axis-chip.emo-revenge { color: var(--red); border-color: rgba(184,107,107,0.5); background: rgba(184,107,107,0.06); }
+  .axis-chip.emo-other { color: var(--accent); border-color: rgba(200,184,138,0.35); }
+  .axis-chip.skip-reason { color: var(--text-muted); border-color: var(--border-light); font-style: italic; }
+  /* Axis Insights (Setup/Procedure/Emotion/SkipReason) */
+  .axis-insights-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .axis-block { border: 1px solid var(--border); padding: 20px 24px; }
+  .axis-block-title { font-family: 'Jost', sans-serif; font-size: 13px; color: var(--text); letter-spacing: 0.18em; text-transform: uppercase; margin-bottom: 4px; }
+  .axis-block-sub { font-family: 'Jost', sans-serif; font-size: 10px; color: var(--text-muted); letter-spacing: 0.12em; margin-bottom: 14px; }
+  .axis-rows { display: flex; flex-direction: column; gap: 8px; }
+  .axis-row { display: grid; grid-template-columns: 1.4fr 48px 60px 90px; gap: 10px; padding: 8px 0; font-size: 13px; border-bottom: 1px solid var(--border); align-items: center; }
+  .axis-row:last-child { border-bottom: none; }
+  .axis-row-label { color: var(--text-dim); font-family: 'Jost', sans-serif; }
+  .axis-row .num { text-align: right; font-family: 'Jost', sans-serif; font-size: 13px; }
+  .axis-row-empty { font-family: 'Jost', sans-serif; font-size: 11px; color: var(--text-muted); font-style: italic; padding: 12px 0; text-align: center; }
+  .axis-bar-wrap { position: relative; height: 4px; background: var(--border); margin-top: 4px; grid-column: 1 / -1; }
+  .axis-bar { position: absolute; top: 0; left: 0; height: 100%; background: var(--accent); }
+  @media (max-width: 900px) {
+    .axis-insights-grid { grid-template-columns: 1fr; }
+  }
+  /* Monthly Review */
+  .monthly-review-toggle { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+  .monthly-review-section { border: 1px solid var(--border); padding: 32px 36px; background: linear-gradient(135deg, rgba(200,184,138,0.03), transparent 70%); }
+  .monthly-review-header { display: flex; justify-content: space-between; align-items: flex-end; padding-bottom: 20px; border-bottom: 1px solid var(--border); margin-bottom: 28px; }
+  .monthly-review-title { font-family: 'Jost', sans-serif; font-size: 22px; font-weight: 300; letter-spacing: 0.15em; text-transform: uppercase; color: var(--text); }
+  .monthly-review-period { font-family: 'Jost', sans-serif; font-size: 14px; color: var(--text-muted); letter-spacing: 0.1em; }
+  .monthly-review-month-select { background: transparent; border: 1px solid var(--border-light); color: var(--text); font-family: 'Jost', sans-serif; font-size: 12px; padding: 6px 12px; letter-spacing: 0.1em; cursor: pointer; }
+  .monthly-review-month-select:hover { border-color: var(--accent); }
+  .equity-curve-wrap { position: relative; width: 100%; height: 320px; margin-bottom: 24px; }
+  .review-metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; padding: 20px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); margin-bottom: 28px; }
+  .review-metric { display: flex; flex-direction: column; gap: 6px; }
+  .review-metric-label { font-family: 'Jost', sans-serif; font-size: 12px; color: var(--text-muted); letter-spacing: 0.15em; text-transform: uppercase; }
+  .review-metric-value { font-family: 'Jost', sans-serif; font-size: 22px; font-weight: 300; color: var(--text); }
+  .review-metric-value.positive { color: var(--green); }
+  .review-metric-value.negative { color: var(--red); }
+  .review-metric-value.muted { color: var(--text-dim); }
+  .process-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 28px; }
+  .process-block { border: 1px solid var(--border); padding: 18px 22px; }
+  .process-block-title { font-family: 'Jost', sans-serif; font-size: 12px; color: var(--text-muted); letter-spacing: 0.18em; text-transform: uppercase; margin-bottom: 14px; }
+  .process-block-row { display: flex; justify-content: space-between; align-items: baseline; padding: 6px 0; border-bottom: 1px solid var(--border); }
+  .process-block-row:last-child { border-bottom: none; }
+  .process-block-label { font-family: 'Jost', sans-serif; font-size: 13px; color: var(--text-dim); }
+  .process-block-value { font-family: 'Jost', sans-serif; font-size: 14px; color: var(--text); }
+  .process-bar-wrap { position: relative; height: 6px; background: var(--border); margin: 8px 0; }
+  .process-bar { position: absolute; top: 0; left: 0; height: 100%; }
+  .process-bar.wait { background: var(--green); }
+  .process-bar.jump { background: var(--red); }
+  .monthly-reflection { margin-top: 8px; }
+  .monthly-reflection-label { font-family: 'Jost', sans-serif; font-size: 12px; color: var(--text-muted); letter-spacing: 0.18em; text-transform: uppercase; margin-bottom: 10px; }
+  .monthly-reflection-textarea { width: 100%; background: transparent; border: 1px solid var(--border-light); color: var(--text); font-family: 'Jost', sans-serif; font-size: 13px; padding: 12px 14px; min-height: 100px; line-height: 1.7; resize: vertical; box-sizing: border-box; }
+  .monthly-reflection-textarea:focus { border-color: var(--accent); outline: none; }
+  .monthly-review-empty { text-align: center; padding: 60px 20px; color: var(--text-muted); font-family: 'Jost', sans-serif; font-style: italic; font-size: 14px; letter-spacing: 0.08em; }
+  /* Auto-show banner on month start */
+  .new-month-banner { padding: 14px 22px; border: 1px solid var(--accent); background: rgba(200,184,138,0.06); display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+  .new-month-banner-text { font-family: 'Jost', sans-serif; font-size: 13px; color: var(--text); letter-spacing: 0.05em; }
+  .new-month-banner-text strong { color: var(--accent); font-weight: 400; }
+  .new-month-banner-actions { display: flex; gap: 10px; }
+  @media (max-width: 900px) {
+    .review-metrics { grid-template-columns: 1fr 1fr; }
+    .process-grid { grid-template-columns: 1fr; }
+  }
+  .memo-cell::-webkit-scrollbar { height: 2px; background: transparent; }
+  .memo-cell::-webkit-scrollbar-thumb { background: var(--border-light); }
+  footer { margin-top: 80px; padding-top: 32px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; font-family: 'Jost', sans-serif; font-size: 10px; color: var(--text-muted); letter-spacing: 0.15em; text-transform: uppercase; }
+  .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 100; align-items: center; justify-content: center; }
+  .modal-overlay.active { display: flex; }
+  .modal { background: var(--bg); border: 1px solid var(--border-light); padding: 40px; max-width: 900px; width: 90%; max-height: 90vh; overflow-y: auto; }
+  .modal-title { font-family: 'Jost', sans-serif; font-size: 18px; font-weight: 400; letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+  @media (max-width: 900px) {
+    body { padding: 40px 20px; }
+    header { flex-direction: column; align-items: flex-start; gap: 20px; }
+    .stats { grid-template-columns: 1fr 1fr; }
+    .stat.hero { grid-column: span 2; }
+    .stat { border-right: none; border-bottom: 1px solid var(--border); }
+    .stat:nth-child(odd) { border-right: 1px solid var(--border); }
+    .stat.hero { border-right: none; }
+    .stat.hero .stat-value.hero-value { font-size: 44px; }
+    .form-grid { grid-template-columns: repeat(2, 1fr); }
+    .field-full, .field-third { grid-column: span 2; }
+    .checklist { grid-column: span 2; }
+    .checklist-grid { grid-template-columns: 1fr; }
+  }
+  ::-webkit-scrollbar { height: 6px; width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border-light); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="title-block">
+    <h1>Trade Journal</h1>
+    <div class="subtitle">— A quiet record of decisions</div>
+  </div>
+  <div class="header-actions">
+    <button onclick="document.getElementById('csvImportInput').click()">Import CSV</button>
+    <input type="file" id="csvImportInput" accept=".csv" style="display:none" onchange="importCSV(this)">
+    <button onclick="exportCSV()">Export CSV</button>
+    <button class="danger" onclick="clearAll()">Clear All</button>
+  </div>
+</header>
+
+<div class="new-month-banner" id="newMonthBanner" style="display:none">
+  <div class="new-month-banner-text">
+    <strong id="newMonthBannerMonth">— 月</strong> の振り返りができます。今月の成長を見てみますか?
+  </div>
+  <div class="new-month-banner-actions">
+    <button class="monthly-goals-btn" onclick="openMonthlyReview()">Review</button>
+    <button class="monthly-goals-btn" onclick="dismissNewMonthBanner()">後で</button>
+  </div>
+</div>
+
+<div class="stats">
+  <div class="stat hero">
+    <div class="stat-label">Rule Adherence</div>
+    <div class="stat-value hero-value" id="overallRule">—</div>
+    <div class="hero-meta" id="overallRuleMeta">awaiting data</div>
+    <div class="hero-split">
+      <div class="hero-split-item">
+        <span class="hero-split-label">Entry</span>
+        <span class="hero-split-value" id="entryRule">—</span>
+        <span class="hero-split-sub" id="entryRuleSub">— / —</span>
+      </div>
+      <div class="hero-split-item">
+        <span class="hero-split-label">Exit</span>
+        <span class="hero-split-value" id="exitRule">—</span>
+        <span class="hero-split-sub" id="exitRuleSub">— / —</span>
+      </div>
+    </div>
+    <div class="hero-window">
+      <span>Last 7d <strong id="rule7d">—</strong></span>
+      <span>Last 30d <strong id="rule30d">—</strong></span>
+    </div>
+  </div>
+  <div class="stat"><div class="stat-label">Total P&L</div><div class="stat-value" id="totalPnl">—</div><div class="stat-sub" id="totalCount">0 closed trades</div></div>
+  <div class="stat"><div class="stat-label">Win Rate</div><div class="stat-value" id="winRate">—</div><div class="stat-sub" id="winLoss">— wins / — losses</div></div>
+  <div class="stat"><div class="stat-label">This Month</div><div class="stat-value" id="monthPnl">—</div><div class="stat-sub" id="monthCount">0 trades</div></div>
+  <div class="stat"><div class="stat-label">Open Positions</div><div class="stat-value" id="openCount">0</div><div class="stat-sub">currently holding</div></div>
+  <div class="stat"><div class="stat-label">Pending Reflect</div><div class="stat-value" id="unreflectedCount">0</div><div class="stat-sub" id="unreflectedSub">awaiting reflection</div></div>
+</div>
+
+<section class="section" id="lessonsSection">
+  <div class="section-header">
+    <div class="section-title">Lessons</div>
+    <div class="section-meta">— 今日の自分に向けて(過去の学び・目標)</div>
+  </div>
+  <div class="lessons-display" id="lessonsDisplay"></div>
+  <div class="lessons-actions">
+    <button class="lessons-btn" onclick="shuffleLessons()" id="shuffleLessonsBtn" style="display:none">Shuffle</button>
+    <button class="lessons-btn" onclick="toggleLessonsManage()" id="manageLessonsBtn">Manage</button>
+  </div>
+  <div class="lessons-manage" id="lessonsManage" style="display:none">
+    <div class="lessons-manage-header">
+      <div class="lessons-manage-title">All Lessons</div>
+    </div>
+    <div class="lesson-add-row">
+      <input type="text" id="lessonAddInput" class="lesson-add-input" placeholder="新しいLessonを書く(例: 入る理由を探していると感じたら、それ自体が見送りシグナル)">
+      <label class="lesson-add-pin">
+        <input type="checkbox" id="lessonAddPin"><span>Pin</span>
+      </label>
+      <button class="lessons-btn" onclick="addLesson()">Add</button>
+    </div>
+    <div class="lessons-list" id="lessonsList"></div>
+  </div>
+</section>
+
+<!-- Watchlistからの取り込み待ちバナー(Pending Import) -->
+<section class="section pending-import-banner" id="pendingImportBanner" style="display:none">
+  <div class="pending-import-inner">
+    <div class="pending-import-label">Watchlistから取り込み可能</div>
+    <div class="pending-import-target" id="pendingImportTarget">—</div>
+    <div class="pending-import-actions">
+      <button onclick="discardPendingImport()">破棄</button>
+      <button class="primary" onclick="applyPendingImport()">取り込む</button>
+    </div>
+  </div>
+</section>
+
+<section class="section new-entry-section">
+  <div class="section-header"><div class="section-title">New Entry</div><div class="section-meta">— record a trade</div></div>
+  <div class="form-grid">
+    <div class="field field-third"><label>Date</label><input type="date" id="date"></div>
+    <div class="field field-third"><label>Time</label><input type="time" id="time"></div>
+    <div class="field field-third"><label>Strategy</label><select id="strategy"><option value="デイトレ">デイトレ</option><option value="短期スイング">短期スイング</option><option value="中長期">中長期</option></select></div>
+    <div class="field field-third"><label>Entry Type</label><select id="entryType"><option value="メイン">メイン</option><option value="打診">打診</option></select></div>
+    <div class="field field-third"><label>Trigger Timeframe — 判断時間軸</label><select id="triggerTf"><option value="">— 選択 —</option><option value="5m">5分足</option><option value="15m">15分足</option><option value="1h">1時間足</option><option value="1d">日足</option><option value="multi">複数(メモ参照)</option></select></div>
+    <div class="field field-third"><label>Ticker</label><input type="text" id="ticker" placeholder="7203"></div>
+    <div class="field field-third"><label>Name</label><input type="text" id="name" placeholder="トヨタ自動車"></div>
+    <div class="field field-third"><label>Action</label><select id="action"><option value="買い">買い</option><option value="売り">売り</option></select></div>
+    <div class="field field-third"><label>Entry Price</label><input type="number" id="price" step="0.1" placeholder="2800"></div>
+    <div class="field field-third"><label>Stop Price — 損切り価格</label><input type="number" id="stopPrice" step="0.1" placeholder="2440"></div>
+    <div class="field field-third"><label>Target Price — 利確目標</label><input type="number" id="targetPrice" step="0.1" placeholder="3200"></div>
+    <div class="field field-third"><label>Shares</label><input type="number" id="shares" step="100" min="0" placeholder="100"></div>
+    <div class="field field-third"><label>R:R 比(自動)</label><input type="text" id="rrRatio" readonly placeholder="—"></div>
+    <div class="field field-third"><label>Risk 金額(自動)</label><input type="text" id="riskAmount" readonly placeholder="—"></div>
+    <div class="field field-third"><label>Status</label><select id="entryStatus"><option value="holding">Holding(保有中)</option><option value="closed">Closed(決済済)</option><option value="skipped">Skipped(見送り)</option></select></div>
+    <div class="field field-third" id="exitTypeWrap" style="display:none"><label>Exit Type</label><select id="exitType"><option value="">— 選択 —</option><option value="stop">損切り(Stop)</option><option value="profit">利確(Profit)</option></select></div>
+    <div class="field field-third" id="exitPriceWrap" style="display:none"><label>Exit Price</label><input type="number" id="exitPrice" step="0.1" placeholder="2900"></div>
+    <div class="field field-third" id="exitDateWrap" style="display:none"><label>Exit Date — 決済日(同日なら空欄でOK)</label><input type="date" id="exitDate" placeholder=""></div>
+    <div class="field field-full"><label>P&L — 自動計算(手動上書き可)</label><input type="number" id="pnl" placeholder="Exit Price入力で自動計算"></div>
+    <div class="field field-third" id="setupWrap">
+      <label>Setup — パターン</label>
+      <select id="setupField">
+        <option value="">— 選択 —</option>
+        <option value="戻り売り">戻り売り</option>
+        <option value="押し目買い">押し目買い</option>
+        <option value="ブレイクアウト">ブレイクアウト</option>
+        <option value="ブレイクダウン">ブレイクダウン</option>
+        <option value="ゾーン反発">ゾーン反発</option>
+        <option value="逆張り">逆張り</option>
+        <option value="その他">その他</option>
+      </select>
+    </div>
+    <div class="field field-third" id="procedureWrap">
+      <label>Procedure — 手順</label>
+      <select id="procedureField">
+        <option value="">— 選択 —</option>
+        <option value="確定確認">確定確認</option>
+        <option value="先読み">先読み</option>
+      </select>
+    </div>
+    <div class="field field-third" id="emotionWrap">
+      <label>Emotion — 感情</label>
+      <select id="emotionField">
+        <option value="">— 選択 —</option>
+        <option value="フラット">フラット</option>
+        <option value="怖い">怖い</option>
+        <option value="入りたい">入りたい</option>
+        <option value="迷い">迷い</option>
+        <option value="リベンジ">リベンジ</option>
+      </select>
+    </div>
+    <div class="field field-full" id="skipReasonWrap" style="display:none">
+      <label>Skip Reason — 見送り理由</label>
+      <select id="skipReasonField">
+        <option value="">— 選択 —</option>
+        <option value="シグナル不足">シグナル不足(明確なシグナルが出なかった)</option>
+        <option value="環境悪い">環境悪い(地合い・時間帯等)</option>
+        <option value="確証バイアス自覚">確証バイアス自覚(根拠を探していた)</option>
+        <option value="ルール違反回避">ルール違反回避(自分のルールに反するため)</option>
+        <option value="その他">その他</option>
+      </select>
+    </div>
+    <div class="field field-full" id="triggerCondWrap" style="display:none">
+      <label>Trigger Condition — 何が起きたら入る予定だったか</label>
+      <input type="text" id="triggerCondField" placeholder="例: 15分足で2,800円を実体で割ったら売り" autocomplete="off">
+    </div>
+    <div class="field field-full">
+      <label>Tags — 癖・根拠の目印(複数可、Enter/スペース/カンマで確定)</label>
+      <div class="tags-input-wrap">
+        <div class="tags-input-box" id="tagsBox" onclick="document.getElementById('tagsField').focus()">
+          <input type="text" class="tags-input-field" id="tagsField" placeholder="例: 上ヒゲ、緑ゾーン、リテスト頭抑え" autocomplete="off">
+        </div>
+        <div class="tag-suggestions" id="tagSuggestions"></div>
+      </div>
+    </div>
+    <div class="field field-full"><label>Memo — エントリー根拠・想定外シナリオ・判定時間軸</label><textarea id="memo" placeholder="例:緑ゾーン上限でトレンドライン接触、出来高増を確認して押し目買い。判定時間軸は15分足の実体確定。想定外: 寄り天で即崩れ→2,600円まで戻ったら撤退"></textarea></div>
+    <div class="field field-full"><label>Reflection — 決済後の振り返り・学び(任意・後から編集可)</label><textarea id="reflection" placeholder="決済後に書く欄。良かった点、悪かった点、感情、次回への教訓など"></textarea></div>
+    <div class="checklist">
+      <div class="checklist-header"><div class="checklist-label">Rules Checklist</div></div>
+      <div class="checklist-section">
+        <div class="checklist-group-label">Entry — 計画段階</div>
+        <div class="checklist-grid">
+          <label class="check-item"><input type="checkbox" id="r1"><span class="check-text">損切り価格を事前決定</span></label>
+          <label class="check-item"><input type="checkbox" id="r2"><span class="check-text">逆指値を発注</span></label>
+          <label class="check-item"><input type="checkbox" id="r3"><span class="check-text">3シナリオを言語化(Stop/Target+想定外をMemo)</span></label>
+          <label class="check-item"><input type="checkbox" id="r7"><span class="check-text">感情ではなく根拠で入った</span></label>
+        </div>
+      </div>
+      <div class="checklist-section">
+        <div class="checklist-group-label">Exit — 結果段階 (Closed時のみ・決済タイプで自動切替)</div>
+        <div class="checklist-grid">
+          <label class="check-item disabled" id="r4Wrap"><input type="checkbox" id="r4" disabled><span class="check-text">ルール通りに損切り</span></label>
+          <label class="check-item disabled" id="r5Wrap"><input type="checkbox" id="r5" disabled><span class="check-text">撤退条件(時間軸+価格)を満たして決済</span></label>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="form-actions">
+    <button onclick="clearForm()">Clear</button>
+    <button class="primary" onclick="addEntry()">Add Entry</button>
+  </div>
+</section>
+
+<section class="section" id="monthlyReviewSection" style="display:none">
+  <div class="section-header">
+    <div class="section-title">Monthly Review</div>
+    <div class="section-meta">— 月次の振り返り(意図的に見る装置)</div>
+  </div>
+  <div class="monthly-review-toggle">
+    <button onclick="toggleMonthlyReview()" id="monthlyReviewToggleBtn">Open Review</button>
+    <select class="monthly-review-month-select" id="monthlyReviewMonthSelect" onchange="renderMonthlyReview()"></select>
+  </div>
+  <div class="monthly-review-section" id="monthlyReviewBody" style="display:none">
+    <div class="monthly-review-header">
+      <div class="monthly-review-title" id="monthlyReviewTitle">— 月の振り返り</div>
+      <div class="monthly-review-period" id="monthlyReviewPeriod">—</div>
+    </div>
+
+    <div id="monthlyReviewContent">
+      <div class="equity-curve-wrap">
+        <canvas id="equityCurveCanvas" role="img" aria-label="累積損益の折れ線グラフ(その月の積み上がり)"></canvas>
+      </div>
+
+      <div class="review-metrics">
+        <div class="review-metric">
+          <div class="review-metric-label">Net P&L</div>
+          <div class="review-metric-value" id="mrNetPnl">—</div>
+        </div>
+        <div class="review-metric">
+          <div class="review-metric-label">Max Drawdown</div>
+          <div class="review-metric-value" id="mrMaxDD">—</div>
+        </div>
+        <div class="review-metric">
+          <div class="review-metric-label">Best Day</div>
+          <div class="review-metric-value muted" id="mrBestDay">—</div>
+        </div>
+        <div class="review-metric">
+          <div class="review-metric-label">Worst Day</div>
+          <div class="review-metric-value muted" id="mrWorstDay">—</div>
+        </div>
+      </div>
+
+      <div class="process-grid">
+        <div class="process-block">
+          <div class="process-block-title">Process — 行動の質</div>
+          <div class="process-block-row">
+            <span class="process-block-label">Rule Adherence(平均)</span>
+            <span class="process-block-value" id="mrRuleAdherence">—</span>
+          </div>
+          <div class="process-block-row" style="border-bottom:none">
+            <span class="process-block-label">確定確認 vs 先読み</span>
+            <span class="process-block-value" id="mrProcedureSummary">—</span>
+          </div>
+          <div class="process-bar-wrap" id="mrProcedureBarWrap" style="display:none">
+            <div class="process-bar wait" id="mrProcedureBar"></div>
+          </div>
+        </div>
+        <div class="process-block">
+          <div class="process-block-title">Tendency — 今月の傾向</div>
+          <div class="process-block-row">
+            <span class="process-block-label">最頻 Setup</span>
+            <span class="process-block-value" id="mrTopSetup">—</span>
+          </div>
+          <div class="process-block-row">
+            <span class="process-block-label">最頻 Emotion</span>
+            <span class="process-block-value" id="mrTopEmotion">—</span>
+          </div>
+          <div class="process-block-row" style="border-bottom:none">
+            <span class="process-block-label">Trade 数</span>
+            <span class="process-block-value" id="mrTradeCount">—</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="monthly-reflection">
+        <div class="monthly-reflection-label">Monthly Reflection — この月の振り返り</div>
+        <textarea class="monthly-reflection-textarea" id="monthlyReflectionTextarea" placeholder="例:&#10;・今月は確定確認の比率が上がった&#10;・FOMO入りは3回 → 来月はゼロを目指す&#10;・逆張りで負けてる → 来月は順張り中心に絞る"></textarea>
+      </div>
+    </div>
+    <div class="monthly-review-empty" id="monthlyReviewEmpty" style="display:none">この月にはまだトレードがありません</div>
+  </div>
+</section>
+
+<section class="section" id="axisInsightsSection" style="display:none">
+  <div class="section-header">
+    <div class="section-title">Insights</div>
+    <div class="section-meta" id="axisInsightsMeta">— Setup / Procedure / Emotion 別の傾向</div>
+  </div>
+  <div class="axis-insights-grid">
+    <div class="axis-block" id="procedureBlock">
+      <div class="axis-block-title">Procedure — 手順</div>
+      <div class="axis-block-sub">確定確認 vs 先読み(最重要)</div>
+      <div class="axis-rows" id="procedureRows"></div>
+    </div>
+    <div class="axis-block" id="setupBlock">
+      <div class="axis-block-title">Setup — パターン</div>
+      <div class="axis-block-sub">得意な型を見つける</div>
+      <div class="axis-rows" id="setupRows"></div>
+    </div>
+    <div class="axis-block" id="emotionBlock">
+      <div class="axis-block-title">Emotion — 感情</div>
+      <div class="axis-block-sub">心理状態と結果の相関</div>
+      <div class="axis-rows" id="emotionRows"></div>
+    </div>
+    <div class="axis-block" id="skipReasonBlock">
+      <div class="axis-block-title">Skip Reason — 見送り理由</div>
+      <div class="axis-block-sub">どんな理由で見送ったか</div>
+      <div class="axis-rows" id="skipReasonRows"></div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="tagStatsSection" style="display:none">
+  <div class="section-header">
+    <div class="section-title">Tag Insights</div>
+    <div class="section-meta" id="tagStatsMeta">— タグ別の傾向</div>
+  </div>
+  <div class="tag-stats">
+    <div class="tag-stats-header">
+      <div>Tag</div>
+      <div style="text-align:right">N</div>
+      <div style="text-align:right">Win%</div>
+      <div style="text-align:right">P&L</div>
+      <div style="text-align:right">Rule%</div>
+    </div>
+    <div id="tagStatsBody"></div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-header"><div class="section-title">Records</div><div class="section-meta" id="recordCount">— 0 entries</div></div>
+  <div class="filters">
+    <div class="filter"><label>Strategy</label><select id="filterStrategy" onchange="renderTable()"><option value="">All</option><option value="デイトレ">デイトレ</option><option value="短期スイング">短期スイング</option><option value="中長期">中長期</option></select></div>
+    <div class="filter"><label>Status</label><select id="filterStatus" onchange="renderTable()"><option value="">All</option><option value="holding">Holding</option><option value="closed">Closed</option><option value="skipped">Skipped</option></select></div>
+    <div class="filter"><label>Tag</label><select id="filterTag" onchange="renderTable()"><option value="">All</option></select></div>
+    <div id="activeTagFilter"></div>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Date</th><th>Time</th><th>Strategy</th><th>Ticker</th><th>Action</th><th class="num">Entry</th><th class="num">Shares</th><th class="num">Plan<br><span style="font-size:9px;color:var(--text-muted);font-weight:300">Stop / Target</span></th><th class="num">Exit</th><th class="num">P&L</th><th>Status</th><th>Rule</th><th>Memo</th><th>Reflection</th><th></th></tr></thead>
+      <tbody id="entriesBody"></tbody>
+    </table>
+  </div>
+</section>
+
+<div class="modal-overlay" id="editModal">
+  <div class="modal">
+    <div class="modal-title">Edit Entry</div>
+    <div class="form-grid">
+      <input type="hidden" id="editId">
+      <div class="field field-third"><label>Date</label><input type="date" id="editDate"></div>
+      <div class="field field-third"><label>Time</label><input type="time" id="editTime"></div>
+      <div class="field field-third"><label>Strategy</label><select id="editStrategy"><option value="デイトレ">デイトレ</option><option value="短期スイング">短期スイング</option><option value="中長期">中長期</option></select></div>
+      <div class="field field-third"><label>Entry Type</label><select id="editEntryType"><option value="メイン">メイン</option><option value="打診">打診</option></select></div>
+      <div class="field field-third"><label>Trigger Timeframe — 判断時間軸</label><select id="editTriggerTf"><option value="">— 選択 —</option><option value="5m">5分足</option><option value="15m">15分足</option><option value="1h">1時間足</option><option value="1d">日足</option><option value="multi">複数(メモ参照)</option></select></div>
+      <div class="field field-third"><label>Ticker</label><input type="text" id="editTicker"></div>
+      <div class="field field-third"><label>Name</label><input type="text" id="editName"></div>
+      <div class="field field-third"><label>Action</label><select id="editAction"><option value="買い">買い</option><option value="売り">売り</option></select></div>
+      <div class="field field-third"><label>Entry Price</label><input type="number" id="editPrice" step="0.1"></div>
+      <div class="field field-third"><label>Stop Price — 損切り価格</label><input type="number" id="editStopPrice" step="0.1"></div>
+      <div class="field field-third"><label>Target Price — 利確目標</label><input type="number" id="editTargetPrice" step="0.1"></div>
+      <div class="field field-third"><label>Shares</label><input type="number" id="editShares" step="100" min="0"></div>
+      <div class="field field-third"><label>R:R 比(自動)</label><input type="text" id="editRrRatio" readonly placeholder="—"></div>
+      <div class="field field-third"><label>Risk 金額(自動)</label><input type="text" id="editRiskAmount" readonly placeholder="—"></div>
+      <div class="field field-third"><label>Status</label><select id="editStatusSelect"><option value="holding">Holding</option><option value="closed">Closed</option><option value="skipped">Skipped</option></select></div>
+      <div class="field field-third" id="editExitTypeWrap" style="display:none"><label>Exit Type</label><select id="editExitType"><option value="">— 選択 —</option><option value="stop">損切り(Stop)</option><option value="profit">利確(Profit)</option></select></div>
+      <div class="field field-third"><label>Exit Price (決済価格)</label><input type="number" id="editExitPrice" step="0.1"></div>
+      <div class="field field-third" id="editExitDateWrap"><label>Exit Date — 決済日</label><input type="date" id="editExitDate"></div>
+      <div class="field field-full"><label>P&L — 自動計算(手動上書き可)</label><input type="number" id="editPnl"></div>
+      <div class="field field-third" id="editSetupWrap">
+        <label>Setup — パターン</label>
+        <select id="editSetupField">
+          <option value="">— 選択 —</option>
+          <option value="戻り売り">戻り売り</option>
+          <option value="押し目買い">押し目買い</option>
+          <option value="ブレイクアウト">ブレイクアウト</option>
+          <option value="ブレイクダウン">ブレイクダウン</option>
+          <option value="ゾーン反発">ゾーン反発</option>
+          <option value="逆張り">逆張り</option>
+          <option value="その他">その他</option>
+        </select>
+      </div>
+      <div class="field field-third" id="editProcedureWrap">
+        <label>Procedure — 手順</label>
+        <select id="editProcedureField">
+          <option value="">— 選択 —</option>
+          <option value="確定確認">確定確認</option>
+          <option value="先読み">先読み</option>
+        </select>
+      </div>
+      <div class="field field-third" id="editEmotionWrap">
+        <label>Emotion — 感情</label>
+        <select id="editEmotionField">
+          <option value="">— 選択 —</option>
+          <option value="フラット">フラット</option>
+          <option value="怖い">怖い</option>
+          <option value="入りたい">入りたい</option>
+          <option value="迷い">迷い</option>
+          <option value="リベンジ">リベンジ</option>
+        </select>
+      </div>
+      <div class="field field-full" id="editSkipReasonWrap" style="display:none">
+        <label>Skip Reason — 見送り理由</label>
+        <select id="editSkipReasonField">
+          <option value="">— 選択 —</option>
+          <option value="シグナル不足">シグナル不足(明確なシグナルが出なかった)</option>
+          <option value="環境悪い">環境悪い(地合い・時間帯等)</option>
+          <option value="確証バイアス自覚">確証バイアス自覚(根拠を探していた)</option>
+          <option value="ルール違反回避">ルール違反回避(自分のルールに反するため)</option>
+          <option value="その他">その他</option>
+        </select>
+      </div>
+      <div class="field field-full" id="editTriggerCondWrap" style="display:none">
+        <label>Trigger Condition — 何が起きたら入る予定だったか</label>
+        <input type="text" id="editTriggerCondField" placeholder="例: 15分足で2,800円を実体で割ったら売り" autocomplete="off">
+      </div>
+      <div class="field field-full">
+        <label>Tags — 癖・根拠の目印</label>
+        <div class="tags-input-wrap">
+          <div class="tags-input-box" id="editTagsBox" onclick="document.getElementById('editTagsField').focus()">
+            <input type="text" class="tags-input-field" id="editTagsField" placeholder="例: 上ヒゲ、緑ゾーン" autocomplete="off">
+          </div>
+          <div class="tag-suggestions" id="editTagSuggestions"></div>
+        </div>
+      </div>
+      <div class="field field-full"><label>Memo — エントリー根拠・想定外シナリオ・判定時間軸</label><textarea id="editMemo"></textarea></div>
+      <div class="field field-full"><label>Reflection — 決済後の振り返り・学び</label><textarea id="editReflection" placeholder="決済後の振り返り、感情、次回への教訓"></textarea></div>
+      <div class="checklist">
+        <div class="checklist-header"><div class="checklist-label">Rules Checklist</div></div>
+        <div class="checklist-section">
+          <div class="checklist-group-label">Entry — 計画段階</div>
+          <div class="checklist-grid">
+            <label class="check-item"><input type="checkbox" id="editR1"><span class="check-text">損切り価格を事前決定</span></label>
+            <label class="check-item"><input type="checkbox" id="editR2"><span class="check-text">逆指値を発注</span></label>
+            <label class="check-item"><input type="checkbox" id="editR3"><span class="check-text">3シナリオを言語化(Stop/Target+想定外をMemo)</span></label>
+            <label class="check-item"><input type="checkbox" id="editR7"><span class="check-text">感情ではなく根拠で入った</span></label>
+          </div>
+        </div>
+        <div class="checklist-section">
+          <div class="checklist-group-label">Exit — 結果段階 (Closed時のみ・決済タイプで自動切替)</div>
+          <div class="checklist-grid">
+            <label class="check-item" id="editR4Wrap"><input type="checkbox" id="editR4"><span class="check-text">ルール通りに損切り</span></label>
+            <label class="check-item" id="editR5Wrap"><input type="checkbox" id="editR5"><span class="check-text">撤退条件(時間軸+価格)を満たして決済</span></label>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button onclick="closeEditModal()">Cancel</button>
+      <button class="primary" onclick="saveEdit()">Save</button>
+    </div>
+  </div>
+</div>
+
+<footer><div>Trade Journal — Local Storage</div><div id="lastUpdated">—</div></footer>
+
+<script>
+  // v2 because schema changed (added rule checks). v1 entries treated as "unevaluated" (excluded from adherence).
+  const STORAGE_KEY = 'trade_journal_v2';
+  const LEGACY_KEY = 'trade_journal_v1';
+  const RULE_DEFS = {
+    entry: [
+      { id: 'r1', label: '損切り価格を事前決定' },
+      { id: 'r2', label: '逆指値を発注' },
+      { id: 'r3', label: '3シナリオを言語化(価格+判定時間軸)' },
+      { id: 'r7', label: '感情ではなく根拠で入った' },
+    ],
+    exit: [
+      { id: 'r4', label: 'ルール通りに損切り' },
+      { id: 'r5', label: '撤退条件(時間軸+価格)を満たして決済' },
+    ]
+  };
+
+  function setDefaultDateTime() {
+    const now = new Date();
+    document.getElementById('date').value = now.toISOString().slice(0,10);
+    document.getElementById('time').value = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+  }
+
+  function loadEntries() {
+    try {
+      const v2 = localStorage.getItem(STORAGE_KEY);
+      if (v2) return JSON.parse(v2);
+      // Migrate v1 → v2: keep entries but mark them as legacy (no rules object = excluded from adherence)
+      const v1 = localStorage.getItem(LEGACY_KEY);
+      if (v1) {
+        const migrated = JSON.parse(v1).map(e => ({ ...e, legacy: true }));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated));
+        return migrated;
+      }
+      return [];
+    } catch { return []; }
+  }
+
+  function saveEntries(entries) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+    const now = new Date();
+    document.getElementById('lastUpdated').textContent = `Updated ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}`;
+  }
+
+  function collectRules(prefix) {
+    // returns { r1: bool, r2: bool, ... r7: bool }
+    const rules = {};
+    ['r1','r2','r3','r4','r5','r7'].forEach(k => {
+      const el = document.getElementById(prefix + k.charAt(0).toUpperCase() + k.slice(1));
+      // For 'add' form prefix is '', for edit it's 'edit'
+      const realId = prefix === '' ? k : prefix + k.charAt(0).toUpperCase() + k.slice(1);
+      const el2 = document.getElementById(realId);
+      rules[k] = el2 ? el2.checked : false;
+    });
+    return rules;
+  }
+
+  // Toggle Exit Type visibility and R4/R5 availability based on Status and Exit Type
+  // - status !== 'closed': hide Exit Type, disable both R4/R5
+  // - status === 'closed' + exitType 'stop':   show Exit Type, enable R4 only (R5 = N/A)
+  // - status === 'closed' + exitType 'profit': show Exit Type, enable R5 only (R4 = N/A)
+  // - status === 'closed' + exitType '':       show Exit Type, both disabled (待ち選択)
+  function bindStatusToExitChecks(statusElId, exitTypeWrapId, exitTypeElId, r4WrapId, r5WrapId, r4Id, r5Id) {
+    const statusEl = document.getElementById(statusElId);
+    const exitTypeWrap = document.getElementById(exitTypeWrapId);
+    const exitTypeEl = document.getElementById(exitTypeElId);
+    const r4Wrap = document.getElementById(r4WrapId);
+    const r5Wrap = document.getElementById(r5WrapId);
+    const r4 = document.getElementById(r4Id);
+    const r5 = document.getElementById(r5Id);
+
+    const setBox = (wrap, box, active) => {
+      if (active) {
+        wrap.classList.remove('disabled');
+        box.disabled = false;
+      } else {
+        wrap.classList.add('disabled');
+        box.disabled = true;
+        box.checked = false;
+      }
+    };
+
+    const update = () => {
+      const isClosed = statusEl.value === 'closed';
+      exitTypeWrap.style.display = isClosed ? '' : 'none';
+      if (!isClosed) {
+        exitTypeEl.value = '';
+        setBox(r4Wrap, r4, false);
+        setBox(r5Wrap, r5, false);
+        return;
+      }
+      const type = exitTypeEl.value;
+      setBox(r4Wrap, r4, type === 'stop');
+      setBox(r5Wrap, r5, type === 'profit');
+    };
+    statusEl.addEventListener('change', update);
+    exitTypeEl.addEventListener('change', update);
+    update();
+  }
+
+  function addEntry() {
+    const date = document.getElementById('date').value;
+    const ticker = document.getElementById('ticker').value.trim();
+    const price = parseFloat(document.getElementById('price').value);
+    const shares = parseInt(document.getElementById('shares').value);
+    if (!date || !ticker || isNaN(price) || isNaN(shares)) {
+      alert('Date, Ticker, Entry Price, Shares は必須です'); return;
+    }
+    const stopRaw = document.getElementById('stopPrice').value;
+    const targetRaw = document.getElementById('targetPrice').value;
+    const stopPrice = stopRaw !== '' ? parseFloat(stopRaw) : null;
+    const targetPrice = targetRaw !== '' ? parseFloat(targetRaw) : null;
+    const status = document.getElementById('entryStatus').value;
+    const exitType = status === 'closed' ? (document.getElementById('exitType').value || null) : null;
+    const exitPriceRaw = document.getElementById('exitPrice').value;
+    const exitPrice = (status === 'closed' && exitPriceRaw !== '') ? parseFloat(exitPriceRaw) : null;
+    // 決済日: 空欄なら null(=エントリー日と同じ扱い)。Closed時のみ有効。
+    const exitDateRaw = document.getElementById('exitDate').value;
+    const exitDate = (status === 'closed' && exitDateRaw !== '') ? exitDateRaw : null;
+    const pnlRaw = document.getElementById('pnl').value;
+    const pnl = (status === 'closed' && pnlRaw !== '') ? parseFloat(pnlRaw) : null;
+    const rules = {
+      r1: document.getElementById('r1').checked,
+      r2: document.getElementById('r2').checked,
+      r3: document.getElementById('r3').checked,
+      r4: document.getElementById('r4').checked,
+      r5: document.getElementById('r5').checked,
+      r7: document.getElementById('r7').checked,
+    };
+    const entry = {
+      id: Date.now(), date,
+      time: document.getElementById('time').value,
+      strategy: document.getElementById('strategy').value,
+      entryType: document.getElementById('entryType').value,
+      triggerTf: document.getElementById('triggerTf').value || null,
+      ticker, name: document.getElementById('name').value.trim(),
+      action: document.getElementById('action').value,
+      price, shares, stopPrice, targetPrice, exitPrice, exitDate, pnl,
+      memo: document.getElementById('memo').value.trim(),
+      reflection: document.getElementById('reflection').value.trim(),
+      status, exitType, rules,
+      tags: (typeof newTagsInput !== 'undefined') ? newTagsInput.getTags() : [],
+      setup: status === 'skipped' ? null : (document.getElementById('setupField').value || null),
+      procedure: status === 'skipped' ? null : (document.getElementById('procedureField').value || null),
+      emotion: status === 'skipped' ? null : (document.getElementById('emotionField').value || null),
+      skipReason: status === 'skipped' ? (document.getElementById('skipReasonField').value || null) : null,
+      triggerCond: status === 'skipped' ? (document.getElementById('triggerCondField').value.trim() || null) : null
+    };
+    const entries = loadEntries();
+    entries.unshift(entry);
+    saveEntries(entries);
+    renderAll();
+    clearForm();
+  }
+
+  function clearForm() {
+    ['ticker','name','price','shares','stopPrice','targetPrice','exitPrice','exitDate','pnl','memo','reflection','rrRatio','riskAmount'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+    ['r1','r2','r3','r4','r5','r7'].forEach(id => { const el = document.getElementById(id); if (el) el.checked = false; });
+    document.getElementById('entryType').value = 'メイン';
+    document.getElementById('triggerTf').value = '';
+    document.getElementById('exitType').value = '';
+    ['setupField','procedureField','emotionField','skipReasonField','triggerCondField'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+    if (typeof newTagsInput !== 'undefined') newTagsInput.clear();
+    // Re-run binding to hide Exit Type/Price fields and disable R4/R5
+    document.getElementById('entryStatus').dispatchEvent(new Event('change'));
+    // 自動計算の手動上書きフラグをリセット
+    if (typeof entryPnLCtl !== 'undefined') entryPnLCtl.reset();
+    setDefaultDateTime();
+  }
+
+  function openEditModal(id) {
+    const entry = loadEntries().find(e => e.id === id);
+    if (!entry) return;
+    // 編集モーダルを開く時点で、既存P&L値がある場合は自動計算で上書きされないよう一旦overrideをON
+    // ユーザーがクリアして再計算したい場合はP&L欄を空にしてから他フィールドを変更すれば再計算が走る
+    if (typeof editPnLCtl !== 'undefined') {
+      editPnLCtl.setOverride(entry.pnl !== null && entry.pnl !== undefined);
+    }
+    document.getElementById('editId').value = entry.id;
+    document.getElementById('editDate').value = entry.date;
+    document.getElementById('editTime').value = entry.time || '';
+    document.getElementById('editStrategy').value = entry.strategy;
+    document.getElementById('editEntryType').value = entry.entryType || 'メイン';
+    document.getElementById('editTriggerTf').value = entry.triggerTf || '';
+    document.getElementById('editTicker').value = entry.ticker;
+    document.getElementById('editName').value = entry.name || '';
+    document.getElementById('editAction').value = entry.action;
+    document.getElementById('editPrice').value = entry.price;
+    document.getElementById('editStopPrice').value = entry.stopPrice ?? '';
+    document.getElementById('editTargetPrice').value = entry.targetPrice ?? '';
+    document.getElementById('editShares').value = entry.shares;
+    document.getElementById('editExitPrice').value = entry.exitPrice ?? '';
+    document.getElementById('editPnl').value = entry.pnl ?? '';
+    document.getElementById('editStatusSelect').value = entry.status || 'holding';
+    document.getElementById('editExitType').value = entry.exitType || '';
+    document.getElementById('editMemo').value = entry.memo || '';
+    document.getElementById('editReflection').value = entry.reflection || '';
+    if (typeof editTagsInput !== 'undefined') editTagsInput.setTags(entry.tags || []);
+    const rules = entry.rules || {};
+    ['r1','r2','r3','r4','r5','r7'].forEach(k => {
+      const cap = 'edit' + k.charAt(0).toUpperCase() + k.slice(1);
+      const el = document.getElementById(cap);
+      if (el) el.checked = !!rules[k];
+    });
+    // Trigger exit-check binding for edit modal
+    const evt = new Event('change');
+    document.getElementById('editStatusSelect').dispatchEvent(evt);
+    document.getElementById('editExitType').dispatchEvent(evt);
+    // Restore checked state (binding may have cleared them); only restore the active one
+    if (entry.exitType === 'stop') document.getElementById('editR4').checked = !!rules.r4;
+    if (entry.exitType === 'profit') document.getElementById('editR5').checked = !!rules.r5;
+    // 軸2-4・Skip Reason・Exit Dateの値セットはStatus切替のchange発火後に実施
+    // (bindStatusToAxes/bindExitDateVisibilityがStatus切替時に値をクリアするため)
+    document.getElementById('editSetupField').value = entry.setup || '';
+    document.getElementById('editProcedureField').value = entry.procedure || '';
+    document.getElementById('editEmotionField').value = entry.emotion || '';
+    document.getElementById('editSkipReasonField').value = entry.skipReason || '';
+    document.getElementById('editTriggerCondField').value = entry.triggerCond || '';
+    document.getElementById('editExitDate').value = entry.exitDate || '';
+    // 既存P&Lがない場合は、Exit Priceから自動計算を試みる
+    if (entry.pnl === null || entry.pnl === undefined) {
+      if (typeof editPnLCtl !== 'undefined') {
+        editPnLCtl.setOverride(false);
+        editPnLCtl.recalc();
+      }
+    }
+    document.getElementById('editModal').classList.add('active');
+    // textarea を内容に応じて自動リサイズ。モーダル表示後に scrollHeight を取れるよう次フレームで実行。
+    requestAnimationFrame(() => {
+      ['editMemo', 'editReflection'].forEach(id => {
+        const ta = document.getElementById(id);
+        if (!ta) return;
+        ta.style.height = 'auto';
+        // 内容の高さ。最低でも min-height(90px) を維持
+        ta.style.height = Math.max(90, ta.scrollHeight) + 'px';
+      });
+    });
+  }
+
+  function closeEditModal() {
+    document.getElementById('editModal').classList.remove('active');
+  }
+
+  function saveEdit() {
+    const id = parseInt(document.getElementById('editId').value);
+    const entries = loadEntries();
+    const idx = entries.findIndex(e => e.id === id);
+    if (idx === -1) return;
+    const pnlRaw = document.getElementById('editPnl').value;
+    const exitRaw = document.getElementById('editExitPrice').value;
+    const rules = {
+      r1: document.getElementById('editR1').checked,
+      r2: document.getElementById('editR2').checked,
+      r3: document.getElementById('editR3').checked,
+      r4: document.getElementById('editR4').checked,
+      r5: document.getElementById('editR5').checked,
+      r7: document.getElementById('editR7').checked,
+    };
+    const editStatus = document.getElementById('editStatusSelect').value;
+    const editExitType = editStatus === 'closed' ? (document.getElementById('editExitType').value || null) : null;
+    const editStopRaw = document.getElementById('editStopPrice').value;
+    const editTargetRaw = document.getElementById('editTargetPrice').value;
+    entries[idx] = {
+      ...entries[idx],
+      date: document.getElementById('editDate').value,
+      time: document.getElementById('editTime').value,
+      strategy: document.getElementById('editStrategy').value,
+      entryType: document.getElementById('editEntryType').value,
+      triggerTf: document.getElementById('editTriggerTf').value || null,
+      ticker: document.getElementById('editTicker').value.trim(),
+      name: document.getElementById('editName').value.trim(),
+      action: document.getElementById('editAction').value,
+      price: parseFloat(document.getElementById('editPrice').value),
+      shares: parseInt(document.getElementById('editShares').value),
+      stopPrice: editStopRaw === '' ? null : parseFloat(editStopRaw),
+      targetPrice: editTargetRaw === '' ? null : parseFloat(editTargetRaw),
+      exitPrice: exitRaw === '' ? null : parseFloat(exitRaw),
+      exitDate: (editStatus === 'closed' && document.getElementById('editExitDate').value !== '') ? document.getElementById('editExitDate').value : null,
+      pnl: pnlRaw === '' ? null : parseFloat(pnlRaw),
+      memo: document.getElementById('editMemo').value.trim(),
+      reflection: document.getElementById('editReflection').value.trim(),
+      status: editStatus,
+      exitType: editExitType,
+      rules,
+      tags: (typeof editTagsInput !== 'undefined') ? editTagsInput.getTags() : (entries[idx].tags || []),
+      setup: editStatus === 'skipped' ? null : (document.getElementById('editSetupField').value || null),
+      procedure: editStatus === 'skipped' ? null : (document.getElementById('editProcedureField').value || null),
+      emotion: editStatus === 'skipped' ? null : (document.getElementById('editEmotionField').value || null),
+      skipReason: editStatus === 'skipped' ? (document.getElementById('editSkipReasonField').value || null) : null,
+      triggerCond: editStatus === 'skipped' ? (document.getElementById('editTriggerCondField').value.trim() || null) : null,
+      legacy: false // any edit promotes the entry out of legacy
+    };
+    saveEntries(entries);
+    renderAll();
+    closeEditModal();
+  }
+
+  function deleteEntry(id) {
+    if (!confirm('削除しますか?')) return;
+    saveEntries(loadEntries().filter(e => e.id !== id));
+    renderAll();
+  }
+
+  function clearAll() {
+    if (!confirm('全削除しますか?')) return;
+    if (!confirm('本当に削除しますか?')) return;
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(LEGACY_KEY);
+    renderAll();
+  }
+
+  function formatJPY(num) {
+    if (num === null || num === undefined) return '—';
+    return (num >= 0 ? '+' : '') + num.toLocaleString('ja-JP') + ' ¥';
+  }
+
+  // === Rule Adherence calc ===
+  // entryRule: r1,r2,r3,r7 (4 items). Evaluated for all non-legacy entries with status holding/closed.
+  // exitRule:  r4 OR r5 (1 item depending on exitType). Evaluated only for Closed non-legacy entries.
+  //   - exitType 'stop'   → evaluate r4 only (r5 is N/A)
+  //   - exitType 'profit' → evaluate r5 only (r4 is N/A)
+  //   - exitType null/未設定 → exit not evaluated yet (excluded from denominator)
+  // Skipped entries are completely excluded from evaluation (return null) since they represent
+  // "did not trade" — no rules to follow because no action was taken.
+  // overallRule: sum of all evaluated checks / sum of all evaluable slots.
+  function evalEntry(e) {
+    if (e.legacy || !e.rules) return null; // not evaluable
+    if (e.status === 'skipped') return null; // Skipped: 評価対象外
+    const entryKeys = ['r1','r2','r3','r7'];
+    const entryHit = entryKeys.reduce((s, k) => s + (e.rules[k] ? 1 : 0), 0);
+    const entryTotal = 4;
+    let exitHit = 0, exitTotal = 0;
+    if (e.status === 'closed') {
+      if (e.exitType === 'stop') {
+        exitHit = e.rules.r4 ? 1 : 0;
+        exitTotal = 1;
+      } else if (e.exitType === 'profit') {
+        exitHit = e.rules.r5 ? 1 : 0;
+        exitTotal = 1;
+      }
+      // else: exitType未設定 → exitは評価対象外(分母にも含めない)
+    }
+    return { entryHit, entryTotal, exitHit, exitTotal };
+  }
+
+  function adherenceColorClass(pct) {
+    if (pct >= 85) return 'high';
+    if (pct >= 60) return '';
+    return 'low';
+  }
+
+  function pctOrNull(hit, total) {
+    if (total === 0) return null;
+    return Math.round((hit / total) * 100);
+  }
+
+  function ruleRowClass(hit, total) {
+    if (total === 0) return 'na';
+    const pct = hit / total;
+    if (pct === 1) return 'full';
+    if (pct >= 0.7) return 'high';
+    if (pct >= 0.4) return 'mid';
+    return 'low';
+  }
+
+  function renderAdherence(entries) {
+    const evals = entries.map(evalEntry).filter(x => x !== null);
+    let entryHit = 0, entryTotal = 0, exitHit = 0, exitTotal = 0;
+    evals.forEach(v => {
+      entryHit += v.entryHit; entryTotal += v.entryTotal;
+      exitHit += v.exitHit; exitTotal += v.exitTotal;
+    });
+    const overallHit = entryHit + exitHit;
+    const overallTotal = entryTotal + exitTotal;
+    const overallPct = pctOrNull(overallHit, overallTotal);
+    const entryPct = pctOrNull(entryHit, entryTotal);
+    const exitPct = pctOrNull(exitHit, exitTotal);
+
+    const overallEl = document.getElementById('overallRule');
+    const overallMeta = document.getElementById('overallRuleMeta');
+    if (overallPct === null) {
+      overallEl.textContent = '—';
+      overallEl.className = 'stat-value hero-value';
+      overallMeta.textContent = 'awaiting data';
+    } else {
+      overallEl.textContent = overallPct + '%';
+      overallEl.className = 'stat-value hero-value ' + adherenceColorClass(overallPct);
+      overallMeta.textContent = `${overallHit} / ${overallTotal} checks across ${evals.length} ${evals.length === 1 ? 'entry' : 'entries'}`;
+    }
+
+    document.getElementById('entryRule').textContent = entryPct === null ? '—' : entryPct + '%';
+    document.getElementById('entryRuleSub').textContent = entryTotal === 0 ? '— / —' : `${entryHit} / ${entryTotal}`;
+    document.getElementById('exitRule').textContent = exitPct === null ? '—' : exitPct + '%';
+    document.getElementById('exitRuleSub').textContent = exitTotal === 0 ? '— / —' : `${exitHit} / ${exitTotal}`;
+
+    // 7d / 30d windows (overall)
+    const now = new Date();
+    const dayMs = 86400000;
+    const cutoff7 = new Date(now - 7 * dayMs).toISOString().slice(0,10);
+    const cutoff30 = new Date(now - 30 * dayMs).toISOString().slice(0,10);
+    const window = (cutoff) => {
+      let h = 0, t = 0;
+      entries.forEach(e => {
+        if (e.date < cutoff) return;
+        const v = evalEntry(e);
+        if (!v) return;
+        h += v.entryHit + v.exitHit;
+        t += v.entryTotal + v.exitTotal;
+      });
+      return pctOrNull(h, t);
+    };
+    const p7 = window(cutoff7);
+    const p30 = window(cutoff30);
+    document.getElementById('rule7d').textContent = p7 === null ? '—' : p7 + '%';
+    document.getElementById('rule30d').textContent = p30 === null ? '—' : p30 + '%';
+  }
+
+  function ruleTooltipHTML(entry) {
+    if (entry.legacy || !entry.rules) {
+      return `<div class="rule-tooltip"><div class="rule-tooltip-row na">未評価(チェック項目導入前のデータ)</div></div>`;
+    }
+    if (entry.status === 'skipped') {
+      return `<div class="rule-tooltip"><div class="rule-tooltip-row na">評価対象外(Skipped: トレード未実行)</div></div>`;
+    }
+    const rules = entry.rules;
+    const isClosed = entry.status === 'closed';
+    const mark = (checked) => checked ? '<span class="rule-tooltip-mark" style="color:var(--green)">✓</span>' : '<span class="rule-tooltip-mark" style="color:var(--text-muted)">○</span>';
+    const row = (label, checked) => `<div class="rule-tooltip-row ${checked ? 'checked' : 'unchecked'}">${mark(checked)}<span>${label}</span></div>`;
+    const naRow = (label) => `<div class="rule-tooltip-row na"><span class="rule-tooltip-mark">—</span><span>${label}</span></div>`;
+    let html = '<div class="rule-tooltip">';
+    html += '<div class="rule-tooltip-group">Entry</div>';
+    RULE_DEFS.entry.forEach(r => { html += row(r.label, !!rules[r.id]); });
+    html += '<div class="rule-tooltip-group">Exit</div>';
+    if (!isClosed) {
+      RULE_DEFS.exit.forEach(r => { html += naRow(r.label + ' (未判定)'); });
+    } else if (entry.exitType === 'stop') {
+      html += row('ルール通りに損切り', !!rules.r4);
+      html += naRow('撤退条件を満たして決済 (該当なし)');
+    } else if (entry.exitType === 'profit') {
+      html += naRow('ルール通りに損切り (該当なし)');
+      html += row('撤退条件(時間軸+価格)を満たして決済', !!rules.r5);
+    } else {
+      // Exit Type未設定
+      html += naRow('ルール通りに損切り (Exit Type未設定)');
+      html += naRow('撤退条件を満たして決済 (Exit Type未設定)');
+    }
+    html += '</div>';
+    return html;
+  }
+
+  function ruleCellContent(entry) {
+    const v = evalEntry(entry);
+    if (!v) return `<span class="rule-cell na">—${ruleTooltipHTML(entry)}</span>`;
+    const hit = v.entryHit + v.exitHit;
+    const total = v.entryTotal + v.exitTotal;
+    const cls = ruleRowClass(hit, total);
+    return `<span class="rule-cell ${cls}">${hit}/${total}${ruleTooltipHTML(entry)}</span>`;
+  }
+
+  function renderTable() {
+    const entries = loadEntries();
+    const fs = document.getElementById('filterStrategy').value;
+    const fst = document.getElementById('filterStatus').value;
+    const ft = document.getElementById('filterTag').value.toLowerCase();
+    const filtered = entries.filter(e => {
+      if (fs && e.strategy !== fs) return false;
+      if (fst && e.status !== fst) return false;
+      if (ft) {
+        const tags = Array.isArray(e.tags) ? e.tags : [];
+        if (!tags.some(t => t.toLowerCase() === ft)) return false;
+      }
+      return true;
+    });
+    // フィルタバー上のアクティブ表示更新
+    const activeWrap = document.getElementById('activeTagFilter');
+    if (activeWrap) {
+      activeWrap.innerHTML = ft
+        ? `<div class="tag-filter-active">filtering: ${formatTagDisplay(ft)} <span class="tag-filter-clear" onclick="clearTagFilter()">×</span></div>`
+        : '';
+    }
+    const tbody = document.getElementById('entriesBody');
+    document.getElementById('recordCount').textContent = `— ${filtered.length} entries`;
+    if (filtered.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="14"><div class="empty"><div class="empty-text">Nothing recorded yet.</div><div class="empty-sub">Begin where you are</div></div></td></tr>`;
+      return;
+    }
+    tbody.innerHTML = filtered.map(e => {
+      const pnlCls = e.pnl === null ? 'pnl-empty' : (e.pnl >= 0 ? 'pnl-positive' : 'pnl-negative');
+      const pnlDisp = e.pnl === null ? '—' : formatJPY(e.pnl);
+      const exitPriceDisp = (e.exitPrice === null || e.exitPrice === undefined) ? '—' : e.exitPrice.toLocaleString('ja-JP');
+      // 決済日がエントリー日と違う場合だけ、小さく表示
+      const exitDateExtra = (e.status === 'closed' && e.exitDate && e.exitDate !== e.date)
+        ? `<div style="font-size:10px;color:var(--text-muted);margin-top:2px;letter-spacing:0.04em">${e.exitDate.slice(5).replace('-','/')}</div>`
+        : '';
+      const exitDisp = `${exitPriceDisp}${exitDateExtra}`;
+      const actCls = e.action === '買い' ? 'buy' : 'sell';
+      const statCls = e.status === 'holding' ? 'holding' : (e.status === 'skipped' ? 'skipped' : 'closed');
+      let statLbl = e.status === 'holding' ? 'Holding' : (e.status === 'skipped' ? 'Skipped' : 'Closed');
+      if (e.status === 'closed' && e.exitType === 'stop') statLbl = 'Closed · Stop';
+      if (e.status === 'closed' && e.exitType === 'profit') statLbl = 'Closed · Profit';
+      const tk = e.name ? `${e.ticker}<br><span style="color:var(--text-muted);font-size:11px">${e.name}</span>` : e.ticker;
+      const probeBadge = e.entryType === '打診' ? ` <span class="badge probe">打診</span>` : '';
+      const tfLabel = { '5m': '5m', '15m': '15m', '1h': '1h', '1d': '1d', 'multi': 'multi' }[e.triggerTf] || '';
+      const tfBadge = tfLabel ? ` <span class="badge tf">${tfLabel}</span>` : '';
+      // Plan column: Stop / Target を縦に並べる。R:Rがあれば右端に小さく表示
+      const stopDisp = (e.stopPrice !== null && e.stopPrice !== undefined) ? e.stopPrice.toLocaleString('ja-JP') : '—';
+      const targetDisp = (e.targetPrice !== null && e.targetPrice !== undefined) ? e.targetPrice.toLocaleString('ja-JP') : '—';
+      let rrDisp = '';
+      if (e.stopPrice !== null && e.stopPrice !== undefined && e.targetPrice !== null && e.targetPrice !== undefined) {
+        const risk = Math.abs(e.price - e.stopPrice);
+        const reward = Math.abs(e.targetPrice - e.price);
+        if (risk > 0) rrDisp = `<div style="font-size:10px;color:var(--text-muted);margin-top:2px">1:${(reward/risk).toFixed(2)}</div>`;
+      }
+      const planCell = `<div style="font-size:12px;color:var(--red)">${stopDisp}</div><div style="font-size:12px;color:var(--green)">${targetDisp}</div>${rrDisp}`;
+      // 軸2-4 / Skip Reason の小さい表示(Memoの上)
+      const axisChips = [];
+      if (e.setup) axisChips.push(`<span class="axis-chip setup">${escapeHtml(e.setup)}</span>`);
+      if (e.procedure) {
+        const procCls = e.procedure === '確定確認' ? 'proc-wait' : 'proc-jump';
+        axisChips.push(`<span class="axis-chip ${procCls}">${escapeHtml(e.procedure)}</span>`);
+      }
+      if (e.emotion) {
+        const emoCls = e.emotion === 'フラット' ? 'emo-flat' : (e.emotion === '怖い' ? 'emo-fear' : (e.emotion === 'リベンジ' ? 'emo-revenge' : 'emo-other'));
+        axisChips.push(`<span class="axis-chip ${emoCls}">${escapeHtml(e.emotion)}</span>`);
+      }
+      if (e.skipReason) axisChips.push(`<span class="axis-chip skip-reason">${escapeHtml(e.skipReason)}</span>`);
+      const axisHtml = axisChips.length > 0 ? `<div class="axis-chips-inline">${axisChips.join('')}</div>` : '';
+      // Trigger Condition(Skipped時のみ)
+      const triggerCondHtml = (e.status === 'skipped' && e.triggerCond)
+        ? `<div style="font-size:11px;color:var(--accent);letter-spacing:0.03em;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:240px" title="${escapeAttr(e.triggerCond)}">→ ${escapeHtml(e.triggerCond)}</div>`
+        : '';
+      // タグのインライン表示
+      const tags = Array.isArray(e.tags) ? e.tags : [];
+      const tagsHtml = tags.length > 0
+        ? `<div class="memo-tags-inline">${tags.map(t => `<span class="memo-tag">${formatTagDisplay(t)}</span>`).join('')}</div>`
+        : '';
+      const memoCell = `${axisHtml}${triggerCondHtml}<div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px">${e.memo || '<span style="color:var(--text-muted)">—</span>'}</div>${tagsHtml}`;
+      return `<tr>
+        <td>${e.date}</td>
+        <td style="color:var(--text-dim);font-size:12px">${e.time || '—'}</td>
+        <td><span class="badge">${e.strategy}</span>${probeBadge}${tfBadge}</td>
+        <td>${tk}</td>
+        <td><span class="badge ${actCls}">${e.action}</span></td>
+        <td class="num">${e.price.toLocaleString('ja-JP')}</td>
+        <td class="num">${e.shares.toLocaleString('ja-JP')}</td>
+        <td class="num">${planCell}</td>
+        <td class="num" style="color:${(e.exitPrice !== null && e.exitPrice !== undefined) ? 'var(--text)' : 'var(--text-muted)'}">${exitDisp}</td>
+        <td class="num ${pnlCls}">${pnlDisp}</td>
+        <td><span class="badge ${statCls}">${statLbl}</span></td>
+        <td>${ruleCellContent(e)}</td>
+        <td class="memo-cell" title="${escapeAttr(e.memo)}">${memoCell}</td>
+        <td class="memo-cell" title="${escapeAttr(e.reflection)}" style="color:${e.reflection ? 'var(--text-dim)' : 'var(--text-muted)'}">${e.reflection ? e.reflection : ((e.status === 'closed' || e.status === 'skipped') ? '<span style="color:var(--accent);font-style:italic;letter-spacing:0.1em">Reflect</span>' : '—')}</td>
+        <td><div class="row-actions">
+          <button class="icon-btn" onclick="openEditModal(${e.id})" title="編集">✎</button>
+          <button class="icon-btn delete" onclick="deleteEntry(${e.id})" title="削除">✕</button>
+        </div></td>
+      </tr>`;
+    }).join('');
+  }
+
+  function renderStats() {
+    const entries = loadEntries();
+    const closed = entries.filter(e => e.status === 'closed');
+    const open = entries.filter(e => e.status === 'holding');
+    const totalPnl = closed.reduce((s, e) => s + (e.pnl || 0), 0);
+    const tpe = document.getElementById('totalPnl');
+    if (closed.length === 0) { tpe.textContent = '—'; tpe.className = 'stat-value'; }
+    else { tpe.textContent = formatJPY(totalPnl); tpe.className = 'stat-value ' + (totalPnl >= 0 ? 'positive' : 'negative'); }
+    document.getElementById('totalCount').textContent = `${closed.length} closed trade${closed.length !== 1 ? 's' : ''}`;
+    const wins = closed.filter(e => e.pnl > 0).length;
+    const losses = closed.filter(e => e.pnl < 0).length;
+    document.getElementById('winRate').textContent = closed.length === 0 ? '—' : ((wins / closed.length) * 100).toFixed(0) + '%';
+    document.getElementById('winLoss').textContent = `${wins} wins / ${losses} losses`;
+    const thisMonth = new Date().toISOString().slice(0,7);
+    const me = closed.filter(e => e.date.startsWith(thisMonth));
+    const mp = me.reduce((s, e) => s + (e.pnl || 0), 0);
+    const mpe = document.getElementById('monthPnl');
+    if (me.length === 0) { mpe.textContent = '—'; mpe.className = 'stat-value'; }
+    else { mpe.textContent = formatJPY(mp); mpe.className = 'stat-value ' + (mp >= 0 ? 'positive' : 'negative'); }
+    document.getElementById('monthCount').textContent = `${me.length} trade${me.length !== 1 ? 's' : ''}`;
+    document.getElementById('openCount').textContent = open.length;
+    // Pending Reflect: Closed または Skipped なのに Reflection が空のもの。書き忘れの可視化。
+    const reflectTargets = entries.filter(e => e.status === 'closed' || e.status === 'skipped');
+    const unreflected = reflectTargets.filter(e => !e.reflection || e.reflection.trim() === '');
+    const unEl = document.getElementById('unreflectedCount');
+    const unSub = document.getElementById('unreflectedSub');
+    if (unreflected.length === 0) {
+      unEl.textContent = reflectTargets.length === 0 ? '—' : '0';
+      unEl.className = 'stat-value';
+      unSub.textContent = reflectTargets.length === 0 ? 'awaiting data' : 'all reflected ✓';
+      unSub.className = 'stat-sub';
+    } else {
+      unEl.textContent = unreflected.length;
+      unEl.className = 'stat-value warn';
+      unSub.textContent = `awaiting reflection`;
+      unSub.className = 'stat-sub warn';
+    }
+    renderAdherence(entries);
+  }
+
+  function renderAll() {
+    renderStats();
+    if (typeof refreshTagFilterOptions === 'function') refreshTagFilterOptions();
+    renderTable();
+    if (typeof renderAxisInsights === 'function') renderAxisInsights();
+    if (typeof renderTagStats === 'function') renderTagStats();
+    if (typeof renderMonthlyReviewSection === 'function') renderMonthlyReviewSection();
+    if (typeof checkNewMonthBanner === 'function') checkNewMonthBanner();
+  }
+
+  function exportCSV() {
+    const entries = loadEntries();
+    if (entries.length === 0) { alert('記録がありません'); return; }
+    const headers = ['Date','Time','Strategy','EntryType','TriggerTf','Ticker','Name','Action','EntryPrice','Shares','StopPrice','TargetPrice','ExitPrice','ExitDate','PnL','Status','ExitType',
+      'R1_StopLossSet','R2_ReverseLimit','R3_Scenarios','R4_StopLossExecuted','R5_ExitTiming','R7_NoRevenge',
+      'Setup','Procedure','Emotion','SkipReason','TriggerCond','Tags','Memo','Reflection'];
+    const rows = entries.map(e => {
+      const r = e.rules || {};
+      const yn = (v) => e.legacy || !e.rules ? '' : (v ? 'Y' : 'N');
+      const r4Out = (e.status === 'closed' && e.exitType === 'stop') ? yn(r.r4) : (e.legacy || !e.rules ? '' : 'N/A');
+      const r5Out = (e.status === 'closed' && e.exitType === 'profit') ? yn(r.r5) : (e.legacy || !e.rules ? '' : 'N/A');
+      const tagsStr = Array.isArray(e.tags) ? e.tags.join(' ') : '';
+      return [e.date, e.time || '', e.strategy, e.entryType || 'メイン', e.triggerTf || '', e.ticker, e.name || '', e.action, e.price, e.shares,
+        e.stopPrice ?? '', e.targetPrice ?? '',
+        e.exitPrice ?? '', e.exitDate || '', e.pnl ?? '', e.status, e.exitType || '',
+        yn(r.r1), yn(r.r2), yn(r.r3), r4Out, r5Out, yn(r.r7),
+        e.setup || '', e.procedure || '', e.emotion || '', e.skipReason || '', e.triggerCond || '',
+        tagsStr,
+        (e.memo || '').replace(/"/g, '""'),
+        (e.reflection || '').replace(/"/g, '""')];
+    });
+    const csv = [headers, ...rows].map(r => r.map(c => `"${c}"`).join(',')).join('\n');
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `trade_journal_${new Date().toISOString().slice(0,10)}.csv`;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 100);
+  }
+
+  // === CSV Import ===
+  // exportCSVが出力したフォーマットを読み込む。既存データへの追加(append)が基本。
+  // BOMがあればスキップ。クォート対応の簡易CSVパーサ。
+  function parseCSV(text) {
+    // BOM除去
+    if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+    const rows = [];
+    let cur = [], field = '', inQuotes = false;
+    for (let i = 0; i < text.length; i++) {
+      const c = text[i], next = text[i + 1];
+      if (inQuotes) {
+        if (c === '"' && next === '"') { field += '"'; i++; }
+        else if (c === '"') { inQuotes = false; }
+        else { field += c; }
+      } else {
+        if (c === '"') { inQuotes = true; }
+        else if (c === ',') { cur.push(field); field = ''; }
+        else if (c === '\n') { cur.push(field); rows.push(cur); cur = []; field = ''; }
+        else if (c === '\r') { /* skip */ }
+        else { field += c; }
+      }
+    }
+    if (field !== '' || cur.length > 0) { cur.push(field); rows.push(cur); }
+    return rows;
+  }
+
+  function importCSV(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const text = e.target.result;
+        const rows = parseCSV(text);
+        if (rows.length < 2) { alert('CSVにデータがありません'); return; }
+        const headers = rows[0];
+        // ヘッダ→インデックスのマップを作成(順序に依存しない)
+        const idx = {};
+        headers.forEach((h, i) => { idx[h.trim()] = i; });
+        const requiredHeaders = ['Date', 'Ticker', 'EntryPrice', 'Shares'];
+        const missing = requiredHeaders.filter(h => !(h in idx));
+        if (missing.length > 0) {
+          alert(`必須ヘッダが不足: ${missing.join(', ')}`);
+          return;
+        }
+
+        const ynToBool = (v) => v === 'Y';
+        const parseNum = (v) => { const n = parseFloat(v); return isNaN(n) ? null : n; };
+        const parseInt2 = (v) => { const n = parseInt(v); return isNaN(n) ? null : n; };
+
+        const imported = [];
+        for (let r = 1; r < rows.length; r++) {
+          const row = rows[r];
+          if (row.length < 2 || !row[idx['Date']]) continue; // 空行スキップ
+          const get = (key) => key in idx ? (row[idx[key]] || '') : '';
+          // rule values: 'Y'/'N'/'N/A'/''
+          // 注: 旧フォーマットにあった R6_FromWatchlist は破棄(監視リストは別ファイル化したため)
+          const rules = {
+            r1: ynToBool(get('R1_StopLossSet')),
+            r2: ynToBool(get('R2_ReverseLimit')),
+            r3: ynToBool(get('R3_Scenarios')),
+            r4: ynToBool(get('R4_StopLossExecuted')),
+            r5: ynToBool(get('R5_ExitTiming')),
+            r7: ynToBool(get('R7_NoRevenge')),
+          };
+          // CSV内のすべてのルール値が空ならlegacy扱い(旧R6列は判定対象に含めるが、無視されるだけ)
+          const allRuleVals = ['R1_StopLossSet','R2_ReverseLimit','R3_Scenarios','R4_StopLossExecuted','R5_ExitTiming','R7_NoRevenge']
+            .map(k => get(k));
+          const legacy = allRuleVals.every(v => v === '' || v === undefined);
+
+          const entry = {
+            id: Date.now() + r, // 一意なIDを生成(同時刻衝突回避でrを足す)
+            date: get('Date'),
+            time: get('Time'),
+            strategy: get('Strategy') || 'デイトレ',
+            entryType: get('EntryType') || 'メイン',
+            triggerTf: get('TriggerTf') || null,
+            ticker: get('Ticker'),
+            name: get('Name'),
+            action: get('Action') || '買い',
+            price: parseNum(get('EntryPrice')),
+            shares: parseInt2(get('Shares')),
+            stopPrice: parseNum(get('StopPrice')),
+            targetPrice: parseNum(get('TargetPrice')),
+            exitPrice: parseNum(get('ExitPrice')),
+            exitDate: get('ExitDate') || null,
+            pnl: parseNum(get('PnL')),
+            status: get('Status') || 'closed',
+            exitType: get('ExitType') || null,
+            memo: get('Memo'),
+            reflection: get('Reflection'),
+            tags: parseTagInput(get('Tags')),
+            setup: get('Setup') || null,
+            procedure: get('Procedure') || null,
+            emotion: get('Emotion') || null,
+            skipReason: get('SkipReason') || null,
+            triggerCond: get('TriggerCond') || null,
+            rules: legacy ? null : rules,
+            legacy
+          };
+          imported.push(entry);
+        }
+
+        if (imported.length === 0) { alert('インポート可能な行が見つかりませんでした'); return; }
+
+        // 既存データとマージ(IDではなくDate+Time+Tickerで重複判定)
+        const existing = loadEntries();
+        const dupKey = (e) => `${e.date}|${e.time || ''}|${e.ticker}|${e.price}`;
+        const existingKeys = new Set(existing.map(dupKey));
+        const newOnly = imported.filter(e => !existingKeys.has(dupKey(e)));
+        const skipped = imported.length - newOnly.length;
+
+        if (newOnly.length === 0) {
+          alert(`すべて既存データと重複していました (${skipped}件スキップ)`);
+          input.value = ''; return;
+        }
+
+        const merged = [...newOnly, ...existing].sort((a, b) => {
+          const da = `${a.date} ${a.time || ''}`;
+          const db = `${b.date} ${b.time || ''}`;
+          return db.localeCompare(da);
+        });
+        saveEntries(merged);
+        renderAll();
+        alert(`${newOnly.length}件をインポートしました${skipped > 0 ? ` (${skipped}件は重複のためスキップ)` : ''}`);
+      } catch (err) {
+        alert('CSV読み込みエラー: ' + err.message);
+        console.error(err);
+      } finally {
+        input.value = ''; // 同じファイルを再選択できるようリセット
+      }
+    };
+    reader.readAsText(file, 'UTF-8');
+  }
+
+  document.getElementById('editModal').addEventListener('click', e => {
+    if (e.target.id === 'editModal') closeEditModal();
+  });
+
+  // === P&L 自動計算 ===
+  // 買い: (Exit Price - Entry Price) × Shares
+  // 売り: (Entry Price - Exit Price) × Shares
+  // 手数料・税金は考慮しない(理論P&L)。手動上書き可能。
+  function calcPnL(action, entryPrice, exitPrice, shares) {
+    if (isNaN(entryPrice) || isNaN(exitPrice) || isNaN(shares)) return null;
+    const diff = action === '売り' ? (entryPrice - exitPrice) : (exitPrice - entryPrice);
+    return Math.round(diff * shares);
+  }
+
+  // Bind auto P&L calculation
+  // - Exit Price / Entry Price / Shares / Action 変更時に P&L を自動更新
+  // - ユーザーが P&L を手動編集したら、自動計算をそのフォームに対して停止(セッション内)
+  function bindAutoPnL(actionId, entryPriceId, exitPriceId, sharesId, pnlId, statusId, exitPriceWrapId) {
+    const actionEl = document.getElementById(actionId);
+    const entryEl = document.getElementById(entryPriceId);
+    const exitEl = document.getElementById(exitPriceId);
+    const sharesEl = document.getElementById(sharesId);
+    const pnlEl = document.getElementById(pnlId);
+    const statusEl = statusId ? document.getElementById(statusId) : null;
+    const exitWrap = exitPriceWrapId ? document.getElementById(exitPriceWrapId) : null;
+    let userOverride = false;
+
+    const recalc = () => {
+      if (userOverride) return; // 手動上書き後は触らない
+      // Closed以外なら計算しない(holding/skipped時はP&L空)
+      if (statusEl && statusEl.value !== 'closed') {
+        pnlEl.value = '';
+        return;
+      }
+      const entryPrice = parseFloat(entryEl.value);
+      const exitPrice = parseFloat(exitEl.value);
+      const shares = parseInt(sharesEl.value);
+      const action = actionEl.value;
+      const pnl = calcPnL(action, entryPrice, exitPrice, shares);
+      pnlEl.value = pnl === null ? '' : pnl;
+    };
+
+    // Status変更時: Closed以外ならExit Priceフィールドを隠してP&Lクリア
+    if (statusEl) {
+      statusEl.addEventListener('change', () => {
+        const isClosed = statusEl.value === 'closed';
+        if (exitWrap) exitWrap.style.display = isClosed ? '' : 'none';
+        if (!isClosed) {
+          exitEl.value = '';
+          pnlEl.value = '';
+          userOverride = false;
+        }
+        recalc();
+      });
+      // 初期表示
+      if (exitWrap) exitWrap.style.display = statusEl.value === 'closed' ? '' : 'none';
+    }
+
+    [actionEl, entryEl, exitEl, sharesEl].forEach(el => {
+      el.addEventListener('input', recalc);
+      el.addEventListener('change', recalc);
+    });
+    // ユーザーがP&Lを直接編集したら自動計算停止
+    pnlEl.addEventListener('input', () => { userOverride = true; });
+
+    // 外部からリセットできるように関数を返す
+    return {
+      reset: () => { userOverride = false; recalc(); },
+      recalc,
+      // 編集モーダル等で既存値を尊重したい時に呼ぶ
+      setOverride: (v) => { userOverride = !!v; }
+    };
+  }
+
+  // Initialize auto P&L for both forms
+  const entryPnLCtl = bindAutoPnL('action', 'price', 'exitPrice', 'shares', 'pnl', 'entryStatus', 'exitPriceWrap');
+  const editPnLCtl = bindAutoPnL('editAction', 'editPrice', 'editExitPrice', 'editShares', 'editPnl', 'editStatusSelect', null);
+
+  // Bind status + exit type → R4/R5 chechbox availability (for both new entry and edit modal)
+  bindStatusToExitChecks('entryStatus', 'exitTypeWrap', 'exitType', 'r4Wrap', 'r5Wrap', 'r4', 'r5');
+  bindStatusToExitChecks('editStatusSelect', 'editExitTypeWrap', 'editExitType', 'editR4Wrap', 'editR5Wrap', 'editR4', 'editR5');
+
+  // Status切替で軸2-4(setup/procedure/emotion)とSkip Reasonを表示/非表示する。
+  // skipped: 軸2-4を非表示、Skip Reasonを表示
+  // holding/closed: 軸2-4を表示、Skip Reasonを非表示
+  function bindStatusToAxes(statusId, setupWrapId, procedureWrapId, emotionWrapId, skipReasonWrapId, setupFieldId, procedureFieldId, emotionFieldId, skipReasonFieldId) {
+    const statusEl = document.getElementById(statusId);
+    const setupWrap = document.getElementById(setupWrapId);
+    const procedureWrap = document.getElementById(procedureWrapId);
+    const emotionWrap = document.getElementById(emotionWrapId);
+    const skipReasonWrap = document.getElementById(skipReasonWrapId);
+    const update = () => {
+      const isSkipped = statusEl.value === 'skipped';
+      setupWrap.style.display = isSkipped ? 'none' : '';
+      procedureWrap.style.display = isSkipped ? 'none' : '';
+      emotionWrap.style.display = isSkipped ? 'none' : '';
+      skipReasonWrap.style.display = isSkipped ? '' : 'none';
+      // 切り替え時に値もクリアしておく(addEntry/saveEditでもガードしてるが、UI上の見た目を整える)
+      if (isSkipped) {
+        document.getElementById(setupFieldId).value = '';
+        document.getElementById(procedureFieldId).value = '';
+        document.getElementById(emotionFieldId).value = '';
+      } else {
+        document.getElementById(skipReasonFieldId).value = '';
+      }
+    };
+    statusEl.addEventListener('change', update);
+    update();
+  }
+  bindStatusToAxes('entryStatus', 'setupWrap', 'procedureWrap', 'emotionWrap', 'skipReasonWrap', 'setupField', 'procedureField', 'emotionField', 'skipReasonField');
+  bindStatusToAxes('editStatusSelect', 'editSetupWrap', 'editProcedureWrap', 'editEmotionWrap', 'editSkipReasonWrap', 'editSetupField', 'editProcedureField', 'editEmotionField', 'editSkipReasonField');
+
+  // Skipped 切替で Trigger Condition 欄も表示/非表示する
+  function bindStatusToTriggerCond(statusId, wrapId, fieldId) {
+    const statusEl = document.getElementById(statusId);
+    const wrap = document.getElementById(wrapId);
+    const field = document.getElementById(fieldId);
+    if (!wrap || !field) return;
+    const update = () => {
+      const isSkipped = statusEl.value === 'skipped';
+      wrap.style.display = isSkipped ? '' : 'none';
+      if (!isSkipped) field.value = '';
+    };
+    statusEl.addEventListener('change', update);
+    update();
+  }
+  bindStatusToTriggerCond('entryStatus', 'triggerCondWrap', 'triggerCondField');
+  bindStatusToTriggerCond('editStatusSelect', 'editTriggerCondWrap', 'editTriggerCondField');
+
+  // Exit Date欄の表示制御:
+  // - Status=closed のときだけ表示
+  // - Closed切替時、空ならentry dateを初期値として入れる(↑キーで日を進めるだけにする)
+  // - Strategy=デイトレ のときラベルを「同日なら空欄でOK」、それ以外は「スイング/中長期はここで指定」
+  function bindExitDateVisibility(statusId, strategyId, exitDateWrapId, exitDateFieldId, entryDateId) {
+    const statusEl = document.getElementById(statusId);
+    const strategyEl = document.getElementById(strategyId);
+    const wrap = document.getElementById(exitDateWrapId);
+    const field = document.getElementById(exitDateFieldId);
+    const entryDateEl = entryDateId ? document.getElementById(entryDateId) : null;
+    if (!wrap || !field) return;
+    const update = () => {
+      const isClosed = statusEl.value === 'closed';
+      wrap.style.display = isClosed ? '' : 'none';
+      if (!isClosed) {
+        field.value = '';
+        return;
+      }
+      // Closedかつ空ならentry dateを入れる(編集モーダルで既存値があれば触らない)
+      if (entryDateEl && !field.value && entryDateEl.value) {
+        field.value = entryDateEl.value;
+      }
+      // Strategy別にラベル変更
+      const labelEl = wrap.querySelector('label');
+      if (labelEl) {
+        if (strategyEl.value === 'デイトレ') {
+          labelEl.textContent = 'Exit Date — 決済日(エントリー日と同じならそのまま)';
+        } else {
+          labelEl.textContent = 'Exit Date — 決済日(↑キーで日を進められます)';
+        }
+      }
+    };
+    statusEl.addEventListener('change', update);
+    strategyEl.addEventListener('change', update);
+    // entry dateが変わった時、まだ手動編集してなければ追従する
+    if (entryDateEl) {
+      entryDateEl.addEventListener('change', () => {
+        // Closedかつexit dateが空なら自動更新。手動入力後はノータッチ。
+        if (statusEl.value === 'closed' && !field.value) {
+          field.value = entryDateEl.value;
+        }
+      });
+    }
+    update();
+  }
+  bindExitDateVisibility('entryStatus', 'strategy', 'exitDateWrap', 'exitDate', 'date');
+  bindExitDateVisibility('editStatusSelect', 'editStrategy', 'editExitDateWrap', 'editExitDate', 'editDate');
+
+  // ============================================================
+  // R:R 比 + Risk金額 自動計算
+  // R:R = |Target - Entry| / |Entry - Stop|
+  // Risk金額 = |Entry - Stop| × Shares
+  // ============================================================
+  function calcRR(entryPrice, stopPrice, targetPrice) {
+    const e = parseFloat(entryPrice);
+    const s = parseFloat(stopPrice);
+    const t = parseFloat(targetPrice);
+    if (isNaN(e) || isNaN(s) || isNaN(t)) return '';
+    const risk = Math.abs(e - s);
+    const reward = Math.abs(t - e);
+    if (risk === 0) return '—';
+    const ratio = reward / risk;
+    return `1:${ratio.toFixed(2)}`;
+  }
+  function calcRiskAmount(entryPrice, stopPrice, shares) {
+    const e = parseFloat(entryPrice);
+    const s = parseFloat(stopPrice);
+    const sh = parseInt(shares);
+    if (isNaN(e) || isNaN(s) || isNaN(sh)) return '';
+    const risk = Math.abs(e - s) * sh;
+    if (risk === 0) return '—';
+    return `¥${Math.round(risk).toLocaleString('ja-JP')}`;
+  }
+  function bindRRRisk(priceId, stopId, targetId, sharesId, rrDisplayId, riskDisplayId) {
+    const priceEl = document.getElementById(priceId);
+    const stopEl = document.getElementById(stopId);
+    const targetEl = document.getElementById(targetId);
+    const sharesEl = document.getElementById(sharesId);
+    const rrEl = document.getElementById(rrDisplayId);
+    const riskEl = document.getElementById(riskDisplayId);
+    const update = () => {
+      rrEl.value = calcRR(priceEl.value, stopEl.value, targetEl.value);
+      riskEl.value = calcRiskAmount(priceEl.value, stopEl.value, sharesEl.value);
+    };
+    [priceEl, stopEl, targetEl, sharesEl].forEach(el => {
+      el.addEventListener('input', update);
+      el.addEventListener('change', update);
+    });
+    update();
+  }
+  bindRRRisk('price', 'stopPrice', 'targetPrice', 'shares', 'rrRatio', 'riskAmount');
+  bindRRRisk('editPrice', 'editStopPrice', 'editTargetPrice', 'editShares', 'editRrRatio', 'editRiskAmount');
+
+  // ============================================================
+  // Shared HTML escape helpers
+  // ============================================================
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+  }
+  // For HTML attribute values (title=""): escape quotes and HTML special chars
+  function escapeAttr(s) {
+    if (!s) return '';
+    return String(s).replace(/[&<>"']/g, c => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+  }
+
+  // ============================================================
+  // Watchlistからの取り込み(Pending Import)
+  // 同一originでWatchlistが開かれている場合、localStorageの専用キーに
+  // 「次に取り込むデータ」が書き込まれている。これを検知してフォームに反映する。
+  // file://で開いている場合は機能しない(Watchlistとjournalで別origin扱い)。
+  // ============================================================
+  const PENDING_IMPORT_KEY = 'trade_journal_pending_import_v1';
+
+  function loadPendingImport() {
+    try {
+      const raw = localStorage.getItem(PENDING_IMPORT_KEY);
+      if (!raw) return null;
+      const data = JSON.parse(raw);
+      if (!data || !data.ticker) return null;
+      return data;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function checkPendingImport() {
+    const data = loadPendingImport();
+    const banner = document.getElementById('pendingImportBanner');
+    const target = document.getElementById('pendingImportTarget');
+    if (!banner || !target) return;
+    if (!data) {
+      banner.style.display = 'none';
+      return;
+    }
+    const label = data.ticker + (data.name ? ' ' + data.name : '');
+    target.textContent = label;
+    banner.style.display = '';
+  }
+
+  function applyPendingImport() {
+    const data = loadPendingImport();
+    if (!data) return;
+    // ticker / name はそのまま反映
+    const tickerEl = document.getElementById('ticker');
+    const nameEl = document.getElementById('name');
+    const stopEl = document.getElementById('stopPrice');
+    const memoEl = document.getElementById('memo');
+    if (tickerEl) tickerEl.value = data.ticker || '';
+    if (nameEl) nameEl.value = data.name || '';
+    // stopPrice: 数値があれば入れる
+    if (stopEl && typeof data.stopPrice === 'number') {
+      stopEl.value = data.stopPrice;
+    }
+    // memo: 既存memoがあれば改行で結合、なければそのまま
+    if (memoEl) {
+      const existing = memoEl.value.trim();
+      const incoming = (data.memo || '').trim();
+      if (existing && incoming) {
+        memoEl.value = existing + '\n' + incoming;
+      } else if (incoming) {
+        memoEl.value = incoming;
+      }
+    }
+    // tags: TagsInputコントローラ経由で反映(makeTagsInputの戻り値をnewTagsInputで保持済み)
+    if (typeof newTagsInput !== 'undefined' && newTagsInput && Array.isArray(data.tags)) {
+      const existingTags = newTagsInput.getTags();
+      const merged = [...existingTags];
+      data.tags.forEach(t => {
+        if (!merged.some(x => x.toLowerCase() === t.toLowerCase())) merged.push(t);
+      });
+      newTagsInput.setTags(merged);
+    }
+    // 取り込み完了 → pending削除
+    localStorage.removeItem(PENDING_IMPORT_KEY);
+    checkPendingImport();
+    // フォームへスクロール
+    const newEntrySection = document.querySelector('section.section');
+    if (newEntrySection) newEntrySection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    // Entry Price にフォーカス(実際の約定価格を手入力する想定)
+    const priceEl = document.getElementById('price');
+    if (priceEl) setTimeout(() => priceEl.focus(), 400);
+  }
+
+  function discardPendingImport() {
+    if (!confirm('取り込み待ちのデータを破棄しますか?\n(Watchlist側の状態は変わりません)')) return;
+    localStorage.removeItem(PENDING_IMPORT_KEY);
+    checkPendingImport();
+  }
+
+  // ページ読み込み時にチェック
+  checkPendingImport();
+  // タブ切り替え時(visibilitychange)にもチェック
+  // 別タブでWatchlistから送信された後、ジャーナルタブに戻ってきた時に検知する
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      checkPendingImport();
+    }
+  });
+  // storage イベント: 別タブでlocalStorageが変更された時の即時検知(オプション、念のため)
+  window.addEventListener('storage', (e) => {
+    if (e.key === PENDING_IMPORT_KEY) {
+      checkPendingImport();
+    }
+  });
+
+  // ============================================================
+  // Lessons
+  // 自分への言葉(過去の学び、今月の目標、自戒)をまとめて持つ。
+  // Monthly Goalsを統合(廃止)。既存のmonthly_goalsデータはpinnedなLessonとして移行。
+  // 表示: ピン留めは常に上部固定、それ以外はランダムで数件表示。Shuffle可能。
+  // データ構造: [{ id, text, pinned, createdAt }]
+  // ============================================================
+  const LESSONS_KEY = 'trade_journal_lessons_v1';
+  const LEGACY_MONTHLY_GOALS_KEY = 'trade_journal_monthly_goals_v1';
+  const LESSONS_RANDOM_COUNT = 4; // ピン留め以外で表示する件数
+
+  function loadLessons() {
+    try {
+      const raw = localStorage.getItem(LESSONS_KEY);
+      if (raw) return JSON.parse(raw);
+      // Migration: 古いmonthly goalsがあればピン留めLessonとして取り込む
+      const legacy = localStorage.getItem(LEGACY_MONTHLY_GOALS_KEY);
+      if (legacy && legacy.trim()) {
+        const migrated = [{
+          id: Date.now(),
+          text: legacy.trim(),
+          pinned: true,
+          createdAt: new Date().toISOString()
+        }];
+        localStorage.setItem(LESSONS_KEY, JSON.stringify(migrated));
+        return migrated;
+      }
+      return [];
+    } catch (e) { return []; }
+  }
+
+  function saveLessonsData(lessons) {
+    localStorage.setItem(LESSONS_KEY, JSON.stringify(lessons));
+  }
+
+  function addLesson() {
+    const input = document.getElementById('lessonAddInput');
+    const pinEl = document.getElementById('lessonAddPin');
+    const text = input.value.trim();
+    if (!text) { input.focus(); return; }
+    const lessons = loadLessons();
+    lessons.unshift({
+      id: Date.now(),
+      text,
+      pinned: pinEl.checked,
+      createdAt: new Date().toISOString()
+    });
+    saveLessonsData(lessons);
+    input.value = '';
+    pinEl.checked = false;
+    renderLessons();
+    renderLessonsList();
+  }
+
+  function toggleLessonPin(id) {
+    const lessons = loadLessons();
+    const idx = lessons.findIndex(l => l.id === id);
+    if (idx === -1) return;
+    lessons[idx].pinned = !lessons[idx].pinned;
+    saveLessonsData(lessons);
+    renderLessons();
+    renderLessonsList();
+  }
+
+  function deleteLesson(id) {
+    if (!confirm('このLessonを削除しますか?')) return;
+    const lessons = loadLessons().filter(l => l.id !== id);
+    saveLessonsData(lessons);
+    renderLessons();
+    renderLessonsList();
+  }
+
+  function editLesson(id) {
+    const lessons = loadLessons();
+    const lesson = lessons.find(l => l.id === id);
+    if (!lesson) return;
+    const newText = prompt('Lessonを編集:', lesson.text);
+    if (newText === null) return;
+    const t = newText.trim();
+    if (!t) return;
+    lesson.text = t;
+    saveLessonsData(lessons);
+    renderLessons();
+    renderLessonsList();
+  }
+
+  // ピン留めLesson同士で↑↓移動する。
+  // ピン留めじゃないLessonに対しては何もしない(順序関係ないため)。
+  // direction: -1 (上へ) / 1 (下へ)
+  function moveLesson(id, direction) {
+    const lessons = loadLessons();
+    const idx = lessons.findIndex(l => l.id === id);
+    if (idx === -1) return;
+    if (!lessons[idx].pinned) return; // ピン留めだけ移動可能
+    // ピン留めの中での現在位置と、移動先(ピン留め内の隣)を見つける
+    // 同じpinnedグループ内で隣接するピンと交換する
+    let swapIdx = -1;
+    if (direction === -1) {
+      // 自分より上で、最も近いpinnedを探す
+      for (let i = idx - 1; i >= 0; i--) {
+        if (lessons[i].pinned) { swapIdx = i; break; }
+      }
+    } else {
+      // 自分より下で、最も近いpinnedを探す
+      for (let i = idx + 1; i < lessons.length; i++) {
+        if (lessons[i].pinned) { swapIdx = i; break; }
+      }
+    }
+    if (swapIdx === -1) return; // 端だった
+    [lessons[idx], lessons[swapIdx]] = [lessons[swapIdx], lessons[idx]];
+    saveLessonsData(lessons);
+    renderLessons();
+    renderLessonsList();
+  }
+
+  // Shuffle: ピン留め以外の表示をランダムに入れ替える(seedに乱数を使う)
+  let lessonsShuffleSeed = Date.now();
+  function shuffleLessons() {
+    lessonsShuffleSeed = Date.now();
+    renderLessons();
+  }
+
+  // ランダム選択(乱数ベース、ピン留め以外から最大n件)
+  function pickRandomLessons(items, n) {
+    if (items.length <= n) return items.slice();
+    // Fisher-Yates partial shuffle
+    const arr = items.slice();
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr.slice(0, n);
+  }
+
+  function renderLessons() {
+    const lessons = loadLessons();
+    const display = document.getElementById('lessonsDisplay');
+    const shuffleBtn = document.getElementById('shuffleLessonsBtn');
+    if (lessons.length === 0) {
+      display.innerHTML = '<div class="lessons-empty">まだLessonがありません。Manage から追加するか、Reflectionで気づいた学びをここに書いてください。</div>';
+      shuffleBtn.style.display = 'none';
+      return;
+    }
+    const pinned = lessons.filter(l => l.pinned);
+    const unpinned = lessons.filter(l => !l.pinned);
+    const randomPicks = pickRandomLessons(unpinned, LESSONS_RANDOM_COUNT);
+    const toShow = [...pinned, ...randomPicks];
+    display.innerHTML = toShow.map(l => `
+      <div class="lesson-item ${l.pinned ? 'pinned' : ''}">
+        ${l.pinned ? '<span class="lesson-pin-mark">📌</span>' : ''}
+        <span class="lesson-text">${escapeHtml(l.text)}</span>
+      </div>
+    `).join('');
+    // ピン以外がある時だけShuffleボタン表示
+    shuffleBtn.style.display = unpinned.length > LESSONS_RANDOM_COUNT ? '' : 'none';
+  }
+
+  function renderLessonsList() {
+    const lessons = loadLessons();
+    const list = document.getElementById('lessonsList');
+    if (lessons.length === 0) {
+      list.innerHTML = '<div style="padding:14px; color:var(--text-muted); font-family:Jost; font-size:12px; font-style:italic;">まだLessonがありません</div>';
+      return;
+    }
+    // ピン留めを上に(同じpinned内では元の配列順を保つ=安定ソート)
+    const sorted = [...lessons].sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
+    // ピン同士で先頭/末尾を判定するための、ピン留めindex一覧
+    const pinnedIds = lessons.filter(l => l.pinned).map(l => l.id);
+    list.innerHTML = sorted.map(l => {
+      const pinnedIdx = pinnedIds.indexOf(l.id);
+      const isFirstPinned = l.pinned && pinnedIdx === 0;
+      const isLastPinned = l.pinned && pinnedIdx === pinnedIds.length - 1;
+      const moveButtons = l.pinned ? `
+          <button onclick="moveLesson(${l.id}, -1)" title="上へ" ${isFirstPinned ? 'disabled style="opacity:0.25;cursor:not-allowed"' : ''}>↑</button>
+          <button onclick="moveLesson(${l.id}, 1)" title="下へ" ${isLastPinned ? 'disabled style="opacity:0.25;cursor:not-allowed"' : ''}>↓</button>
+      ` : '';
+      return `
+      <div class="lessons-list-item">
+        <div class="lessons-list-text ${l.pinned ? 'pinned' : ''}">${l.pinned ? '📌 ' : ''}${escapeHtml(l.text)}</div>
+        <div class="lesson-list-actions">
+          ${moveButtons}
+          <button class="pin ${l.pinned ? 'active' : ''}" onclick="toggleLessonPin(${l.id})" title="${l.pinned ? 'Unpin' : 'Pin'}">${l.pinned ? '📌' : '📍'}</button>
+          <button onclick="editLesson(${l.id})" title="Edit">✎</button>
+          <button class="delete" onclick="deleteLesson(${l.id})" title="Delete">✕</button>
+        </div>
+      </div>
+    `;}).join('');
+  }
+
+  function toggleLessonsManage() {
+    const manage = document.getElementById('lessonsManage');
+    const btn = document.getElementById('manageLessonsBtn');
+    const isOpen = manage.style.display !== 'none';
+    if (isOpen) {
+      manage.style.display = 'none';
+      btn.textContent = 'Manage';
+    } else {
+      manage.style.display = '';
+      btn.textContent = 'Close';
+      renderLessonsList();
+    }
+  }
+
+  // Enterキーで追加
+  document.addEventListener('DOMContentLoaded', () => {
+    const inp = document.getElementById('lessonAddInput');
+    if (inp) {
+      inp.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.isComposing) {
+          e.preventDefault();
+          addLesson();
+        }
+      });
+    }
+  });
+  // DOMContentLoadedより後に実行されてる可能性もあるので即時にもバインド
+  (function bindLessonAddEnter() {
+    const inp = document.getElementById('lessonAddInput');
+    if (inp) {
+      inp.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.isComposing) {
+          e.preventDefault();
+          addLesson();
+        }
+      });
+    }
+  })();
+
+  renderLessons();
+
+  // ============================================================
+  // Tags
+  // 設計方針:
+  // - エントリーは tags: string[] を持つ。先頭の # はストレージ上は付けない(表示時に付ける)。
+  // - 表記揺れ対策: 正規化(trim + 全角→半角の#除去)。
+  //   重複判定は小文字版で行う(英字限定の揺れを吸収)。日本語は完全一致のみ重複扱い。
+  // - 区切り文字: Enter / カンマ(,/、) / スペース。
+  // - 補完候補: 既存全エントリーから集計、頻度順。
+  // ============================================================
+  function parseTagInput(raw) {
+    if (!raw) return [];
+    return raw.split(/[,、\s]+/).map(normalizeTag).filter(t => t.length > 0);
+  }
+  function normalizeTag(t) {
+    if (!t) return '';
+    return String(t).trim().replace(/^[##]+/, '').trim();
+  }
+  function formatTagDisplay(t) { return '#' + t; }
+
+  function collectTagFrequency(entries) {
+    const map = new Map();
+    entries.forEach(e => {
+      const tags = Array.isArray(e.tags) ? e.tags : [];
+      tags.forEach(t => {
+        const key = t.toLowerCase();
+        const cur = map.get(key) || { display: t, count: 0 };
+        cur.count++;
+        map.set(key, cur);
+      });
+    });
+    return [...map.values()].sort((a, b) => b.count - a.count);
+  }
+
+  function makeTagsInput(boxId, fieldId, suggestionsId) {
+    const box = document.getElementById(boxId);
+    const field = document.getElementById(fieldId);
+    const suggestions = document.getElementById(suggestionsId);
+    let tags = [];
+    let highlighted = -1;
+    let currentSuggestions = [];
+
+    function render() {
+      [...box.querySelectorAll('.tag-chip')].forEach(el => el.remove());
+      tags.forEach((t, i) => {
+        const chip = document.createElement('span');
+        chip.className = 'tag-chip';
+        chip.innerHTML = `${formatTagDisplay(t)} <span class="tag-chip-remove" data-i="${i}">×</span>`;
+        chip.querySelector('.tag-chip-remove').addEventListener('click', (e) => {
+          e.stopPropagation();
+          tags.splice(i, 1);
+          render();
+          updateSuggestions();
+        });
+        box.insertBefore(chip, field);
+      });
+    }
+
+    function addTag(t) {
+      const norm = normalizeTag(t);
+      if (!norm) return;
+      const exists = tags.some(x => x.toLowerCase() === norm.toLowerCase());
+      if (exists) return;
+      tags.push(norm);
+      render();
+    }
+
+    function updateSuggestions() {
+      const q = field.value.trim();
+      const allTags = collectTagFrequency(loadEntries());
+      const usedLower = new Set(tags.map(t => t.toLowerCase()));
+      const qNorm = normalizeTag(q).toLowerCase();
+      let filtered;
+      if (qNorm === '') {
+        filtered = allTags.filter(it => !usedLower.has(it.display.toLowerCase())).slice(0, 8);
+      } else {
+        filtered = allTags
+          .filter(it => !usedLower.has(it.display.toLowerCase()) && it.display.toLowerCase().includes(qNorm))
+          .slice(0, 8);
+      }
+      currentSuggestions = filtered.slice();
+      const exactMatch = filtered.some(it => it.display.toLowerCase() === qNorm);
+      if (qNorm && !exactMatch) {
+        currentSuggestions.push({ display: normalizeTag(q), count: null, isNew: true });
+      }
+      highlighted = currentSuggestions.length > 0 ? 0 : -1;
+      renderSuggestions();
+    }
+
+    function renderSuggestions() {
+      if (currentSuggestions.length === 0) {
+        suggestions.classList.remove('active');
+        suggestions.innerHTML = '';
+        return;
+      }
+      suggestions.innerHTML = currentSuggestions.map((it, i) => {
+        const cls = i === highlighted ? 'tag-suggest-item highlighted' : 'tag-suggest-item';
+        const right = it.isNew ? '<span class="tag-suggest-new">new</span>' : `<span class="tag-suggest-count">${it.count}回</span>`;
+        return `<div class="${cls}" data-i="${i}">${formatTagDisplay(it.display)}${right}</div>`;
+      }).join('');
+      suggestions.classList.add('active');
+      suggestions.querySelectorAll('.tag-suggest-item').forEach(el => {
+        el.addEventListener('mousedown', (e) => {
+          e.preventDefault();
+          const i = parseInt(el.dataset.i);
+          if (currentSuggestions[i]) {
+            addTag(currentSuggestions[i].display);
+            field.value = '';
+            updateSuggestions();
+            field.focus();
+          }
+        });
+      });
+    }
+
+    field.addEventListener('input', updateSuggestions);
+    field.addEventListener('focus', updateSuggestions);
+    field.addEventListener('blur', () => {
+      setTimeout(() => { suggestions.classList.remove('active'); }, 150);
+      const val = field.value.trim();
+      if (val) {
+        parseTagInput(val).forEach(addTag);
+        field.value = '';
+      }
+    });
+    field.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ',' || e.key === '、') {
+        e.preventDefault();
+        if (highlighted >= 0 && currentSuggestions[highlighted]) {
+          addTag(currentSuggestions[highlighted].display);
+        } else {
+          parseTagInput(field.value).forEach(addTag);
+        }
+        field.value = '';
+        updateSuggestions();
+      } else if (e.key === ' ') {
+        if (e.isComposing) return;
+        if (field.value.trim() === '') return;
+        e.preventDefault();
+        if (highlighted >= 0 && currentSuggestions[highlighted]) {
+          addTag(currentSuggestions[highlighted].display);
+        } else {
+          parseTagInput(field.value).forEach(addTag);
+        }
+        field.value = '';
+        updateSuggestions();
+      } else if (e.key === 'Backspace' && field.value === '' && tags.length > 0) {
+        tags.pop();
+        render();
+        updateSuggestions();
+      } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        if (currentSuggestions.length === 0) return;
+        highlighted = (highlighted + 1) % currentSuggestions.length;
+        renderSuggestions();
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (currentSuggestions.length === 0) return;
+        highlighted = (highlighted - 1 + currentSuggestions.length) % currentSuggestions.length;
+        renderSuggestions();
+      } else if (e.key === 'Escape') {
+        suggestions.classList.remove('active');
+      }
+    });
+
+    return {
+      getTags: () => tags.slice(),
+      setTags: (arr) => { tags = (arr || []).map(normalizeTag).filter(Boolean); render(); },
+      clear: () => { tags = []; field.value = ''; render(); suggestions.classList.remove('active'); }
+    };
+  }
+
+  const newTagsInput = makeTagsInput('tagsBox', 'tagsField', 'tagSuggestions');
+  const editTagsInput = makeTagsInput('editTagsBox', 'editTagsField', 'editTagSuggestions');
+
+  // タグ別集計: status='closed' のエントリーのみが対象。
+  function computeTagStats(entries) {
+    const map = new Map();
+    entries.forEach(e => {
+      if (e.status !== 'closed') return;
+      const tags = Array.isArray(e.tags) ? e.tags : [];
+      if (tags.length === 0) return;
+      const evalRes = evalEntry(e);
+      tags.forEach(t => {
+        const key = t.toLowerCase();
+        const cur = map.get(key) || { display: t, n: 0, wins: 0, losses: 0, pnl: 0, ruleHit: 0, ruleTotal: 0 };
+        cur.n++;
+        if (typeof e.pnl === 'number') {
+          cur.pnl += e.pnl;
+          if (e.pnl > 0) cur.wins++;
+          else if (e.pnl < 0) cur.losses++;
+        }
+        if (evalRes) {
+          cur.ruleHit += evalRes.entryHit + evalRes.exitHit;
+          cur.ruleTotal += evalRes.entryTotal + evalRes.exitTotal;
+        }
+        map.set(key, cur);
+      });
+    });
+    return [...map.values()].sort((a, b) => b.n - a.n);
+  }
+
+  function renderTagStats() {
+    const entries = loadEntries();
+    const stats = computeTagStats(entries);
+    const section = document.getElementById('tagStatsSection');
+    const body = document.getElementById('tagStatsBody');
+    const meta = document.getElementById('tagStatsMeta');
+    if (stats.length === 0) {
+      section.style.display = 'none';
+      return;
+    }
+    section.style.display = '';
+    meta.textContent = `— ${stats.length} 種類のタグ`;
+    const activeFilter = document.getElementById('filterTag').value.toLowerCase();
+    body.innerHTML = stats.map(s => {
+      const winPct = (s.wins + s.losses) === 0 ? null : Math.round((s.wins / (s.wins + s.losses)) * 100);
+      const winCls = winPct === null ? 'pnl-empty' : (winPct >= 50 ? 'pnl-positive' : 'pnl-negative');
+      const pnlCls = s.pnl === 0 ? 'pnl-empty' : (s.pnl > 0 ? 'pnl-positive' : 'pnl-negative');
+      const rulePct = s.ruleTotal === 0 ? null : Math.round((s.ruleHit / s.ruleTotal) * 100);
+      const ruleDisp = rulePct === null ? '—' : rulePct + '%';
+      const winDisp = winPct === null ? '—' : winPct + '%';
+      const isActive = s.display.toLowerCase() === activeFilter;
+      return `<div class="tag-stats-row ${isActive ? 'active' : ''}" onclick="setTagFilter('${escapeAttr(s.display)}')">
+        <div class="tag-name">${formatTagDisplay(s.display)}</div>
+        <div class="num">${s.n}</div>
+        <div class="num ${winCls}">${winDisp}</div>
+        <div class="num ${pnlCls}">${s.pnl === 0 ? '—' : formatJPY(s.pnl)}</div>
+        <div class="num">${ruleDisp}</div>
+      </div>`;
+    }).join('');
+  }
+
+  // ============================================================
+  // Axis Insights (Setup/Procedure/Emotion/SkipReason)
+  // 単一選択のプリセット軸の集計。
+  // - Setup/Procedure/Emotion: closed のみが対象(P&L集計のため)
+  // - SkipReason: skipped のみが対象
+  // ============================================================
+  function computeAxisStats(entries, axisKey, targetStatus) {
+    // axisKey: 'setup' | 'procedure' | 'emotion' | 'skipReason'
+    // targetStatus: 'closed' | 'skipped'
+    const map = new Map();
+    entries.forEach(e => {
+      if (e.status !== targetStatus) return;
+      const val = e[axisKey];
+      if (!val) return;
+      const cur = map.get(val) || { label: val, n: 0, wins: 0, losses: 0, pnl: 0 };
+      cur.n++;
+      if (typeof e.pnl === 'number') {
+        cur.pnl += e.pnl;
+        if (e.pnl > 0) cur.wins++;
+        else if (e.pnl < 0) cur.losses++;
+      }
+      map.set(val, cur);
+    });
+    return [...map.values()].sort((a, b) => b.n - a.n);
+  }
+
+  function renderAxisBlock(rowsId, stats, opts) {
+    // opts: { showPnL: true/false }
+    const rowsEl = document.getElementById(rowsId);
+    if (stats.length === 0) {
+      rowsEl.innerHTML = '<div class="axis-row-empty">データなし</div>';
+      return 0;
+    }
+    const maxN = Math.max(...stats.map(s => s.n));
+    rowsEl.innerHTML = stats.map(s => {
+      const winPct = (s.wins + s.losses) === 0 ? null : Math.round((s.wins / (s.wins + s.losses)) * 100);
+      const winCls = winPct === null ? 'pnl-empty' : (winPct >= 50 ? 'pnl-positive' : 'pnl-negative');
+      const pnlCls = s.pnl === 0 ? 'pnl-empty' : (s.pnl > 0 ? 'pnl-positive' : 'pnl-negative');
+      const winDisp = winPct === null ? '—' : winPct + '%';
+      const pnlDisp = (!opts.showPnL || s.pnl === 0) ? '—' : formatJPY(s.pnl);
+      const barW = maxN > 0 ? Math.round((s.n / maxN) * 100) : 0;
+      return `<div class="axis-row">
+        <div class="axis-row-label">${escapeHtml(s.label)}</div>
+        <div class="num">${s.n}</div>
+        <div class="num ${winCls}">${winDisp}</div>
+        <div class="num ${pnlCls}">${pnlDisp}</div>
+        <div class="axis-bar-wrap"><div class="axis-bar" style="width:${barW}%"></div></div>
+      </div>`;
+    }).join('');
+    return stats.length;
+  }
+
+  function renderAxisInsights() {
+    const entries = loadEntries();
+    const section = document.getElementById('axisInsightsSection');
+    const setupStats = computeAxisStats(entries, 'setup', 'closed');
+    const procStats = computeAxisStats(entries, 'procedure', 'closed');
+    const emoStats = computeAxisStats(entries, 'emotion', 'closed');
+    const skipStats = computeAxisStats(entries, 'skipReason', 'skipped');
+    const total = setupStats.length + procStats.length + emoStats.length + skipStats.length;
+    if (total === 0) {
+      section.style.display = 'none';
+      return;
+    }
+    section.style.display = '';
+    renderAxisBlock('setupRows', setupStats, { showPnL: true });
+    renderAxisBlock('procedureRows', procStats, { showPnL: true });
+    renderAxisBlock('emotionRows', emoStats, { showPnL: true });
+    renderAxisBlock('skipReasonRows', skipStats, { showPnL: false });
+  }
+
+  function setTagFilter(tag) {
+    const sel = document.getElementById('filterTag');
+    if (![...sel.options].some(o => o.value === tag)) {
+      const opt = document.createElement('option');
+      opt.value = tag; opt.textContent = formatTagDisplay(tag);
+      sel.appendChild(opt);
+    }
+    sel.value = tag;
+    renderTable();
+    renderTagStats();
+    document.querySelector('#recordCount').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function clearTagFilter() {
+    document.getElementById('filterTag').value = '';
+    renderTable();
+    renderTagStats();
+  }
+
+  function refreshTagFilterOptions() {
+    const sel = document.getElementById('filterTag');
+    const current = sel.value;
+    const allTags = collectTagFrequency(loadEntries());
+    sel.innerHTML = '<option value="">All</option>' +
+      allTags.map(t => `<option value="${escapeAttr(t.display)}">${formatTagDisplay(t.display)}</option>`).join('');
+    sel.value = current;
+  }
+
+  // ============================================================
+  // Monthly Review
+  // 設計方針:
+  // - 月単位の振り返り装置。日次煽りを避け、月末・月初に意図的に見るためのもの。
+  // - エクイティカーブはその月のtrade単位での累積P&L推移。日付ベース。
+  // - 月初(=前月分のレビュー)に自動でバナー出す。dismiss/見た記録は localStorage に残す。
+  // - 月別Reflection は別途保存(YYYY-MM key)
+  // ============================================================
+  const MONTHLY_REFLECTION_KEY = 'trade_journal_monthly_reflection_v1';
+  const NEW_MONTH_BANNER_DISMISSED_KEY = 'trade_journal_new_month_banner_dismissed_v1';
+  let equityCurveChart = null;
+  let monthlyReviewIsOpen = false;
+  let currentReviewMonth = null; // YYYY-MM
+
+  function getYearMonth(dateStr) {
+    if (!dateStr) return null;
+    return dateStr.slice(0, 7); // YYYY-MM
+  }
+
+  function getCurrentYearMonth() {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  }
+
+  function getPrevYearMonth(ym) {
+    const [y, m] = ym.split('-').map(Number);
+    const d = new Date(y, m - 2, 1); // 1月戻る
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  }
+
+  function loadMonthlyReflections() {
+    try { return JSON.parse(localStorage.getItem(MONTHLY_REFLECTION_KEY) || '{}'); }
+    catch (e) { return {}; }
+  }
+
+  function saveMonthlyReflection(ym, text) {
+    const all = loadMonthlyReflections();
+    all[ym] = text;
+    localStorage.setItem(MONTHLY_REFLECTION_KEY, JSON.stringify(all));
+  }
+
+  function formatYearMonthLabel(ym) {
+    if (!ym) return '—';
+    const [y, m] = ym.split('-');
+    return `${y}年${parseInt(m)}月`;
+  }
+
+  // 英語タイトル用: "May 2026 — Reflection"
+  function formatYearMonthEnTitle(ym) {
+    if (!ym) return '—';
+    const [y, m] = ym.split('-');
+    const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    return `${monthNames[parseInt(m) - 1]} ${y} — Reflection`;
+  }
+
+  // 実効的な「日付」を返す。
+  // - Closed のエントリー: exitDate があればそれ、なければ date(エントリー日)
+  // - それ以外(holding/skipped): date そのまま
+  // これにより、エクイティカーブや月次集計は「決済日」基準で動く。
+  // スイングや中長期で日跨ぎになる場合に、証券会社の数字と合いやすくなる。
+  function effectiveDate(e) {
+    if (e.status === 'closed' && e.exitDate) return e.exitDate;
+    return e.date;
+  }
+
+  // その月に「決済(または該当)した」エントリーを返す。effectiveDateベース。
+  function entriesInMonth(entries, ym) {
+    return entries.filter(e => getYearMonth(effectiveDate(e)) === ym);
+  }
+
+  // 月別にトレードがある月をすべて返す(降順)
+  function monthsWithActivity(entries) {
+    const set = new Set();
+    entries.forEach(e => {
+      const ym = getYearMonth(effectiveDate(e));
+      if (ym) set.add(ym);
+    });
+    return [...set].sort((a, b) => b.localeCompare(a));
+  }
+
+  // エクイティカーブ用データ作成: 日付別の累積P&L
+  // - その月内のClosedトレードのみ
+  // - 日付は決済日(=effectiveDate)基準。証券会社の数字と一致しやすい。
+  // - 同じ日に複数決済があれば合算
+  // - 日付順にソート、累積を計算
+  function buildEquityCurve(entries, ym) {
+    const monthEntries = entriesInMonth(entries, ym).filter(e => e.status === 'closed' && typeof e.pnl === 'number');
+    if (monthEntries.length === 0) return { labels: [], cumulative: [], dailyMap: new Map() };
+    // 日別合計(決済日基準)
+    const dailyMap = new Map();
+    monthEntries.forEach(e => {
+      const d = effectiveDate(e);
+      const cur = dailyMap.get(d) || 0;
+      dailyMap.set(d, cur + e.pnl);
+    });
+    const sortedDates = [...dailyMap.keys()].sort();
+    let cum = 0;
+    const cumulative = [];
+    sortedDates.forEach(d => {
+      cum += dailyMap.get(d);
+      cumulative.push(cum);
+    });
+    // ラベルは月日のみ(MM/DD)
+    const labels = sortedDates.map(d => {
+      const parts = d.split('-');
+      return `${parts[1]}/${parts[2]}`;
+    });
+    return { labels, cumulative, dailyMap, sortedDates };
+  }
+
+  function computeMaxDrawdown(cumulative) {
+    if (cumulative.length === 0) return 0;
+    let peak = cumulative[0];
+    let maxDD = 0;
+    for (const v of cumulative) {
+      if (v > peak) peak = v;
+      const dd = v - peak;
+      if (dd < maxDD) maxDD = dd;
+    }
+    return maxDD;
+  }
+
+  function renderEquityCurve(curveData) {
+    const canvas = document.getElementById('equityCurveCanvas');
+    if (!canvas) return;
+    if (equityCurveChart) {
+      equityCurveChart.destroy();
+      equityCurveChart = null;
+    }
+    if (curveData.labels.length === 0) return;
+    const ctx = canvas.getContext('2d');
+    equityCurveChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: curveData.labels,
+        datasets: [{
+          label: 'Cumulative P&L',
+          data: curveData.cumulative,
+          borderColor: '#c8b88a',
+          backgroundColor: 'rgba(200,184,138,0.06)',
+          fill: true,
+          tension: 0.2,
+          pointRadius: 3,
+          pointBackgroundColor: '#c8b88a',
+          pointHoverRadius: 6,
+          borderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#121212',
+            borderColor: '#2a2a2a',
+            borderWidth: 1,
+            titleColor: '#e8e6e1',
+            bodyColor: '#c8c6c2',
+            padding: 10,
+            callbacks: {
+              label: (ctx) => `${ctx.parsed.y >= 0 ? '+' : ''}${ctx.parsed.y.toLocaleString('ja-JP')} ¥`
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: { color: '#1f1f1f', drawTicks: false },
+            ticks: { color: '#5f5e5a', font: { size: 11, family: 'Jost' }, maxRotation: 0, autoSkipPadding: 20 }
+          },
+          y: {
+            grid: { color: '#1f1f1f', drawTicks: false },
+            ticks: {
+              color: '#5f5e5a',
+              font: { size: 11, family: 'Jost' },
+              callback: (v) => (v >= 0 ? '+' : '') + Math.round(v/1000) + 'k'
+            }
+          }
+        }
+      }
+    });
+  }
+
+  function renderMonthlyReview() {
+    const sel = document.getElementById('monthlyReviewMonthSelect');
+    const ym = sel.value || currentReviewMonth;
+    if (!ym) return;
+    currentReviewMonth = ym;
+
+    const entries = loadEntries();
+    const monthEntries = entriesInMonth(entries, ym);
+    const closed = monthEntries.filter(e => e.status === 'closed' && typeof e.pnl === 'number');
+
+    document.getElementById('monthlyReviewTitle').textContent = formatYearMonthEnTitle(ym);
+    const skipped = monthEntries.filter(e => e.status === 'skipped');
+    const holding = monthEntries.filter(e => e.status === 'holding');
+    const periodParts = [`${closed.length} closed`];
+    if (skipped.length > 0) periodParts.push(`${skipped.length} skipped`);
+    if (holding.length > 0) periodParts.push(`${holding.length} holding`);
+    document.getElementById('monthlyReviewPeriod').textContent = periodParts.join(' / ');
+
+    const contentEl = document.getElementById('monthlyReviewContent');
+    const emptyEl = document.getElementById('monthlyReviewEmpty');
+    if (monthEntries.length === 0) {
+      contentEl.style.display = 'none';
+      emptyEl.style.display = '';
+      return;
+    }
+    contentEl.style.display = '';
+    emptyEl.style.display = 'none';
+
+    // エクイティカーブ
+    const curve = buildEquityCurve(entries, ym);
+    renderEquityCurve(curve);
+
+    // Net P&L
+    const netPnl = closed.reduce((s, e) => s + e.pnl, 0);
+    const netEl = document.getElementById('mrNetPnl');
+    netEl.textContent = closed.length === 0 ? '—' : formatJPY(netPnl);
+    netEl.className = 'review-metric-value ' + (closed.length === 0 ? 'muted' : (netPnl >= 0 ? 'positive' : 'negative'));
+
+    // Max Drawdown
+    const maxDD = computeMaxDrawdown(curve.cumulative);
+    const ddEl = document.getElementById('mrMaxDD');
+    ddEl.textContent = curve.cumulative.length === 0 ? '—' : formatJPY(maxDD);
+    ddEl.className = 'review-metric-value ' + (curve.cumulative.length === 0 ? 'muted' : (maxDD === 0 ? 'muted' : 'negative'));
+
+    // Best/Worst Day (日次合計)
+    const dailyVals = [...curve.dailyMap.values()];
+    if (dailyVals.length > 0) {
+      const best = Math.max(...dailyVals);
+      const worst = Math.min(...dailyVals);
+      document.getElementById('mrBestDay').textContent = formatJPY(best);
+      document.getElementById('mrWorstDay').textContent = formatJPY(worst);
+    } else {
+      document.getElementById('mrBestDay').textContent = '—';
+      document.getElementById('mrWorstDay').textContent = '—';
+    }
+
+    // Rule Adherence(月平均)
+    let ruleHit = 0, ruleTotal = 0;
+    monthEntries.forEach(e => {
+      const v = evalEntry(e);
+      if (v) {
+        ruleHit += v.entryHit + v.exitHit;
+        ruleTotal += v.entryTotal + v.exitTotal;
+      }
+    });
+    document.getElementById('mrRuleAdherence').textContent = ruleTotal === 0 ? '—' : Math.round((ruleHit / ruleTotal) * 100) + '%';
+
+    // 確定確認 vs 先読み
+    const procCounts = { '確定確認': 0, '先読み': 0 };
+    monthEntries.forEach(e => {
+      if (e.procedure && procCounts[e.procedure] !== undefined) procCounts[e.procedure]++;
+    });
+    const procTotal = procCounts['確定確認'] + procCounts['先読み'];
+    if (procTotal === 0) {
+      document.getElementById('mrProcedureSummary').textContent = '—';
+      document.getElementById('mrProcedureBarWrap').style.display = 'none';
+    } else {
+      const waitPct = Math.round((procCounts['確定確認'] / procTotal) * 100);
+      document.getElementById('mrProcedureSummary').textContent = `${procCounts['確定確認']} / ${procCounts['先読み']} (${waitPct}%)`;
+      const barWrap = document.getElementById('mrProcedureBarWrap');
+      barWrap.style.display = '';
+      const bar = document.getElementById('mrProcedureBar');
+      bar.style.width = waitPct + '%';
+    }
+
+    // 最頻 Setup
+    const setupCounts = {};
+    monthEntries.forEach(e => { if (e.setup) setupCounts[e.setup] = (setupCounts[e.setup] || 0) + 1; });
+    const setupEntries = Object.entries(setupCounts).sort((a, b) => b[1] - a[1]);
+    document.getElementById('mrTopSetup').textContent = setupEntries.length === 0 ? '—' : `${setupEntries[0][0]} (${setupEntries[0][1]}回)`;
+
+    // 最頻 Emotion
+    const emoCounts = {};
+    monthEntries.forEach(e => { if (e.emotion) emoCounts[e.emotion] = (emoCounts[e.emotion] || 0) + 1; });
+    const emoEntries = Object.entries(emoCounts).sort((a, b) => b[1] - a[1]);
+    document.getElementById('mrTopEmotion').textContent = emoEntries.length === 0 ? '—' : `${emoEntries[0][0]} (${emoEntries[0][1]}回)`;
+
+    // Trade数(全status)
+    const tradeCountParts = [`${closed.length} closed`];
+    if (skipped.length > 0) tradeCountParts.push(`${skipped.length} skipped`);
+    if (holding.length > 0) tradeCountParts.push(`${holding.length} holding`);
+    document.getElementById('mrTradeCount').textContent = tradeCountParts.join(' / ');
+
+    // Reflection
+    const reflections = loadMonthlyReflections();
+    document.getElementById('monthlyReflectionTextarea').value = reflections[ym] || '';
+  }
+
+  // Reflectionテキストエリアの保存(blur時)
+  document.addEventListener('blur', (e) => {
+    if (e.target && e.target.id === 'monthlyReflectionTextarea' && currentReviewMonth) {
+      saveMonthlyReflection(currentReviewMonth, e.target.value);
+    }
+  }, true);
+
+  function refreshMonthlyReviewMonthSelect() {
+    const sel = document.getElementById('monthlyReviewMonthSelect');
+    const entries = loadEntries();
+    const months = monthsWithActivity(entries);
+    const current = sel.value;
+    sel.innerHTML = months.map(m => `<option value="${m}">${formatYearMonthLabel(m)}</option>`).join('');
+    // 残せるなら維持、なければ最新
+    if (months.includes(current)) {
+      sel.value = current;
+    } else if (months.length > 0) {
+      sel.value = months[0];
+    }
+  }
+
+  function renderMonthlyReviewSection() {
+    const section = document.getElementById('monthlyReviewSection');
+    const entries = loadEntries();
+    if (entries.length === 0) {
+      section.style.display = 'none';
+      return;
+    }
+    section.style.display = '';
+    refreshMonthlyReviewMonthSelect();
+    if (monthlyReviewIsOpen) {
+      renderMonthlyReview();
+    }
+  }
+
+  function toggleMonthlyReview() {
+    monthlyReviewIsOpen = !monthlyReviewIsOpen;
+    const body = document.getElementById('monthlyReviewBody');
+    const btn = document.getElementById('monthlyReviewToggleBtn');
+    body.style.display = monthlyReviewIsOpen ? '' : 'none';
+    btn.textContent = monthlyReviewIsOpen ? 'Close Review' : 'Open Review';
+    if (monthlyReviewIsOpen) {
+      if (!currentReviewMonth) {
+        const sel = document.getElementById('monthlyReviewMonthSelect');
+        currentReviewMonth = sel.value;
+      }
+      renderMonthlyReview();
+    }
+  }
+
+  function openMonthlyReview() {
+    if (!monthlyReviewIsOpen) toggleMonthlyReview();
+    document.getElementById('monthlyReviewSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    dismissNewMonthBanner();
+  }
+
+  // 月初バナー: 「今月」になって、前月にトレードがあって、かつまだ前月分をdismissしてないなら表示
+  function checkNewMonthBanner() {
+    const banner = document.getElementById('newMonthBanner');
+    const entries = loadEntries();
+    const currentYM = getCurrentYearMonth();
+    const prevYM = getPrevYearMonth(currentYM);
+    const prevHasEntries = entries.some(e => getYearMonth(e.date) === prevYM);
+    if (!prevHasEntries) {
+      banner.style.display = 'none';
+      return;
+    }
+    const dismissed = localStorage.getItem(NEW_MONTH_BANNER_DISMISSED_KEY);
+    if (dismissed === prevYM) {
+      banner.style.display = 'none';
+      return;
+    }
+    banner.style.display = '';
+    document.getElementById('newMonthBannerMonth').textContent = formatYearMonthLabel(prevYM);
+    // バナーから開く時は前月を選択
+    document.getElementById('newMonthBanner').dataset.targetMonth = prevYM;
+  }
+
+  function dismissNewMonthBanner() {
+    const currentYM = getCurrentYearMonth();
+    const prevYM = getPrevYearMonth(currentYM);
+    localStorage.setItem(NEW_MONTH_BANNER_DISMISSED_KEY, prevYM);
+    document.getElementById('newMonthBanner').style.display = 'none';
+    // バナーから開く時は前月をプリセレクト
+    const targetMonth = document.getElementById('newMonthBanner').dataset.targetMonth;
+    if (targetMonth) {
+      const sel = document.getElementById('monthlyReviewMonthSelect');
+      if ([...sel.options].some(o => o.value === targetMonth)) {
+        sel.value = targetMonth;
+        currentReviewMonth = targetMonth;
+      }
+    }
+  }
+
+  setDefaultDateTime();
+  renderAll();
+</script>
+
+</body>
+</html>
